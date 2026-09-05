@@ -39,6 +39,7 @@ header.top .btn { background: rgba(255,255,255,.15); color: #fff; border: 1px so
 h2.step-title { font-size: 16px; margin: 4px 0 6px; color: var(--navy); line-height: 1.4; }
 .step-text { font-size: 15px; line-height: 1.7; margin: 0 0 8px; }
 .branch-text { background: #fff4e5; border-left: 4px solid var(--df); padding: 8px 10px; border-radius: 6px; font-size: 14px; line-height: 1.7; margin: 6px 0 8px; }
+.guide { background: #e6f6ef; border-left: 4px solid #0a9d6c; padding: 8px 10px; border-radius: 6px; font-size: 14px; line-height: 1.7; margin: 6px 0 8px; color: #114d38; }
 ul.notes { margin: 0 0 8px; padding-left: 18px; font-size: 13.5px; line-height: 1.65; color: #333; }
 ul.notes li { margin: 2px 0; }
 

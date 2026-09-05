@@ -244,14 +244,11 @@
       const gs = this.branch ? [] : (this.step.guides || []);
       for (const g of gs) {
         const grp = el("g", {}, guides);
-        el("circle", { cx: px(g.x), cy: px(g.y), r: 16, fill: "none", stroke: "#0a9d6c", "stroke-width": 3, "stroke-dasharray": "5 4" }, grp);
-        el("circle", { cx: px(g.x), cy: px(g.y), r: 4, fill: "#0a9d6c" }, grp);
-        const lx = px(g.lx != null ? g.lx : g.x + 1.6), ly = px(g.ly != null ? g.ly : g.y + 2.6);
-        el("line", { x1: px(g.x), y1: px(g.y) + 16, x2: lx + 20, y2: ly - 40, stroke: "#0a9d6c", "stroke-width": 2, "stroke-dasharray": "4 4" }, grp);
-        const w = Math.max(g.label.length * 24, (g.sub || "").length * 18) + 28;
-        el("rect", { x: lx, y: ly - 40, width: w, height: g.sub ? 68 : 44, rx: 8, fill: "rgba(255,255,255,.94)", stroke: "#0a9d6c", "stroke-width": 2 }, grp);
-        const tx = el("text", { x: lx + 14, y: ly - 12, "font-size": 24, "font-weight": 700, fill: "#0a7a55" }, grp); tx.textContent = g.label;
-        if (g.sub) { const t2 = el("text", { x: lx + 14, y: ly + 16, "font-size": 18, fill: "#0a7a55" }, grp); t2.textContent = g.sub; }
+        el("circle", { cx: px(g.x), cy: px(g.y), r: 26, fill: "rgba(10,157,108,.12)", stroke: "#0a9d6c", "stroke-width": 4, "stroke-dasharray": "8 6" }, grp);
+        const short = g.short || "ポイント";
+        const w = short.length * 22 + 20;
+        el("rect", { x: px(g.x) - w / 2, y: px(g.y) + 32, width: w, height: 34, rx: 8, fill: "#0a9d6c" }, grp);
+        el("text", { x: px(g.x), y: px(g.y) + 57, "text-anchor": "middle", "font-size": 22, "font-weight": 700, fill: "#fff" }, grp).textContent = short;
       }
     }
     render() {
