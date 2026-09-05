@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ハンド動き解説</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top"><h1>ハンド動き解説（きっかけシート）</h1></header>
+<div class="purpose">セットを選ぶと、駒が動いて流れを説明します。</div>
+<div class="list" id="list"></div>
+<script src="tactics/index.js"></script>
+<script>
+  const list = document.getElementById("list");
+  window.TACTIC_LIST.forEach((t) => {
+    const a = document.createElement("a"); a.className = "card"; a.href = "tactic.html?id=" + t.id;
+    a.innerHTML = `<div class="no">セット ${t.id}</div><h2>${t.title}</h2><p>${t.summary}</p>`;
+    list.appendChild(a);
+  });
+  [["07", "センターサイド（7番）"], ["08", "CCダッポ（8番）"]].forEach(([no, name]) => {
+    if (window.TACTIC_LIST.some((t) => t.id === no)) return;
+    const d = document.createElement("div"); d.className = "card soon";
+    d.innerHTML = `<div class="no">セット ${no}</div><h2>${name}</h2><p>準備中</p>`; list.appendChild(d);
+  });
+</script>
+</body>
+</html>

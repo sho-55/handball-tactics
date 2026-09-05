@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ハンド動き解説</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="back" href="./">◀ 一覧</a>
+  <h1 id="title">読み込み中…</h1>
+  <button class="btn" id="legendBtn">見かた</button>
+</header>
+<div class="purpose" id="purpose"></div>
+<div class="app">
+  <div class="court-wrap"><svg id="court" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div class="panel">
+    <div class="stepbar"><div class="dots" id="dots"></div><div class="mode" id="mode"></div></div>
+    <h2 class="step-title" id="stepTitle"></h2>
+    <p class="step-text" id="stepText"></p>
+    <div class="branch-text" id="branchText" hidden></div>
+    <ul class="notes" id="notes"></ul>
+    <div class="branches" id="branches"></div>
+  </div>
+</div>
+<div class="controls">
+  <button id="prev" class="nav">◀ 前へ</button>
+  <button id="replay" class="replay" title="もう一度">↻</button>
+  <button id="auto" class="auto">▶ 自動再生</button>
+  <button id="speed" class="speed">速さ 1x</button>
+  <button id="next" class="nav primary">次へ ▶</button>
+</div>
+<script src="tactics/index.js"></script>
+<script src="js/glossary.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
