@@ -39,7 +39,7 @@
       const bt = $("#branchText");
       if (player.branch) { bt.hidden = false; bt.innerHTML = `<b>${player.branch.label}</b>　` + markTerms(player.branch.text); }
       else bt.hidden = true;
-      const gd = $("#guides");
+      const gd = $("#guideBox");
       const guides = player.branch ? [] : (step.guides || []);
       gd.innerHTML = guides.map((g) => `<div class="guide"><b>◎ ${markTerms(g.label)}</b><br>${markTerms(g.sub || "")}</div>`).join("");
       $("#notes").innerHTML = (step.notes || []).map((n) => `<li>${markTerms(n)}</li>`).join("");
