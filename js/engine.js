@@ -12,7 +12,7 @@
     if (parent) parent.appendChild(e);
     return e;
   }
-  const px = (v) => (v * M).toFixed(1);
+  const px = (v) => Math.round(v * M * 10) / 10;   // 数値を返す（文字列だと + が連結になる）
   const ease = (u) => (u < 0.5 ? 2 * u * u : -1 + (4 - 2 * u) * u);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -246,9 +246,13 @@
         const grp = el("g", {}, guides);
         el("circle", { cx: px(g.x), cy: px(g.y), r: 26, fill: "rgba(10,157,108,.12)", stroke: "#0a9d6c", "stroke-width": 4, "stroke-dasharray": "8 6" }, grp);
         const short = g.short || "ポイント";
-        const w = short.length * 22 + 20;
-        el("rect", { x: px(g.x) - w / 2, y: px(g.y) + 32, width: w, height: 34, rx: 8, fill: "#0a9d6c" }, grp);
-        el("text", { x: px(g.x), y: px(g.y) + 57, "text-anchor": "middle", "font-size": 22, "font-weight": 700, fill: "#fff" }, grp).textContent = short;
+        const w = short.length * 24 + 24;
+        const side = g.side || "below";               // ラベル位置: below / left / right
+        let rx = px(g.x) - w / 2, ry = px(g.y) + 44;
+        if (side === "left") { rx = px(g.x) - w - 40; ry = px(g.y) - 19; }
+        if (side === "right") { rx = px(g.x) + 40; ry = px(g.y) - 19; }
+        el("rect", { x: rx, y: ry, width: w, height: 38, rx: 8, fill: "#0a9d6c" }, grp);
+        el("text", { x: rx + w / 2, y: ry + 27, "text-anchor": "middle", "font-size": 24, "font-weight": 700, fill: "#fff" }, grp).textContent = short;
       }
     }
     render() {
