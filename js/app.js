@@ -15,9 +15,14 @@
     return new RegExp("(" + keys.join("|") + ")", "g");
   };
   const RE = termRe();
+  // 左右反転時の文章: 左↔右、LW↔RW、LB↔RB を同時に入れ替える
+  const SWAP = { "左": "右", "右": "左", "LW": "RW", "RW": "LW", "LB": "RB", "RB": "LB" };
+  const swapText = (t) => t.replace(/LW|RW|LB|RB|左|右/g, (m) => SWAP[m]);
+  let mirrored = false;
   function markTerms(text) {
     const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    return esc(text).replace(RE, (m) => `<span class="term" data-term="${m}">${m}</span>`);
+    const src = mirrored ? swapText(text) : text;
+    return esc(src).replace(RE, (m) => `<span class="term" data-term="${m}">${m}</span>`);
   }
 
   function init(data) {
@@ -26,6 +31,15 @@
     $("#purpose").textContent = "ねらい: " + data.purpose;
     const player = new window.TacticEngine.Player(data, $("#court"));
     window.player = player;
+    // 左右反転（URL ?mirror=1 か前回の設定を復元）
+    let saved = false; try { saved = localStorage.getItem("mirror") === "1"; } catch (e) {}
+    if (params.get("mirror") === "1" || (params.get("mirror") == null && saved)) { mirrored = true; player.setMirror(true); }
+    $("#mirrorBtn").onclick = () => {
+      mirrored = !mirrored; player.setMirror(mirrored);
+      try { localStorage.setItem("mirror", mirrored ? "1" : "0"); } catch (e) {}
+      const u = new URL(location.href); if (mirrored) u.searchParams.set("mirror", "1"); else u.searchParams.delete("mirror");
+      history.replaceState(null, "", u);
+    };
 
     const dots = $("#dots");
     data.steps.forEach((st, i) => { const d = document.createElement("div"); d.className = "dot"; d.textContent = i + 1; d.onclick = () => player.gotoStep(i); dots.appendChild(d); });
@@ -33,11 +47,14 @@
     function renderPanel() {
       const i = player.stepIndex, step = player.step;
       [...dots.children].forEach((d, k) => { d.className = "dot" + (k === i ? " on" : k < i ? " done" : ""); });
-      $("#mode").textContent = player.branch ? "分岐: " + player.branch.label : "本線";
+      $("#mode").textContent = (player.branch ? "分岐: " + (mirrored ? swapText(player.branch.label) : player.branch.label) : "本線");
+      $("#mirrorBtn").classList.toggle("on", mirrored);
+      $("#mirrorBtn").textContent = mirrored ? "⇄ 右から始動" : "⇄ 左右反転";
+      $("#purpose").textContent = "ねらい: " + (mirrored ? swapText(data.purpose) : data.purpose) + (mirrored ? "　※左右を入れ替えたパターン" : "");
       $("#stepTitle").innerHTML = `(${i + 1}) ` + markTerms(step.title);
       $("#stepText").innerHTML = markTerms(step.text);
       const bt = $("#branchText");
-      if (player.branch) { bt.hidden = false; bt.innerHTML = `<b>${player.branch.label}</b>　` + markTerms(player.branch.text); }
+      if (player.branch) { bt.hidden = false; bt.innerHTML = `<b>${mirrored ? swapText(player.branch.label) : player.branch.label}</b>　` + markTerms(player.branch.text); }
       else bt.hidden = true;
       const gd = $("#guideBox");
       const guides = player.branch ? [] : (step.guides || []);
@@ -53,9 +70,9 @@
         const h = document.createElement("h3"); h.textContent = "タップで分岐を再生"; box.appendChild(h);
         const row = document.createElement("div"); row.className = "chips"; row.appendChild(mainChip); box.appendChild(row);
         for (const g in groups) {
-          const h3 = document.createElement("h3"); h3.textContent = g; box.appendChild(h3);
+          const h3 = document.createElement("h3"); h3.textContent = mirrored ? swapText(g) : g; box.appendChild(h3);
           const chips = document.createElement("div"); chips.className = "chips";
-          groups[g].forEach((b) => { const c = document.createElement("button"); c.className = "chip" + (player.branch === b ? " on" : ""); c.textContent = b.label; c.onclick = () => player.playBranch(b); chips.appendChild(c); });
+          groups[g].forEach((b) => { const c = document.createElement("button"); c.className = "chip" + (player.branch === b ? " on" : ""); c.textContent = mirrored ? swapText(b.label) : b.label; c.onclick = () => player.playBranch(b); chips.appendChild(c); });
           box.appendChild(chips);
         }
       }

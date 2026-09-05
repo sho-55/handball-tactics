@@ -13,6 +13,9 @@
     return e;
   }
   const px = (v) => Math.round(v * M * 10) / 10;   // 数値を返す（文字列だと + が連結になる）
+  // 左右反転: 選手IDとラベルの対応
+  const MIRROR_ID = { LW: "RW", RW: "LW", LB: "RB", RB: "LB", CB: "CB", PV: "PV", L1: "R1", L2: "R2", L3: "R3", R1: "L1", R2: "L2", R3: "L3" };
+  const mirrorLabel = (s) => String(s).replace(/[左右]/g, (c) => (c === "左" ? "右" : "左"));
   const ease = (u) => (u < 0.5 ? 2 * u * u : -1 + (4 - 2 * u) * u);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -138,6 +141,7 @@
     constructor(data, hostEl) {
       this.data = data; this.svg = hostEl;
       this.stepIndex = 0; this.speed = 1; this.auto = false; this.runId = 0;
+      this.mirror = false;                                   // 左右反転モード
       this.reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       this.branch = null; this.t = 0; this.playing = false; this.lastTs = 0;
       this.onChange = () => {};
@@ -148,6 +152,15 @@
       this.computeStepStates();
       this.gotoStep(0, true);
     }
+    X(x) { return this.mirror ? px(CW - x) : px(x); }     // 反転を考慮した x 座標
+    setMirror(on) { this.mirror = !!on; this.applyLabels(); this.drawStatic(); this.render(); this.onChange(); }
+    applyLabels() {
+      for (const id in this.data.players) {
+        const p = this.data.players[id];
+        const shown = this.mirror ? MIRROR_ID[id] || id : id;
+        this.nodes[id].text.textContent = p.team === "of" ? shown : (this.mirror ? mirrorLabel(p.label || "") : (p.label || ""));
+      }
+    }
     buildPlayers() {
       this.nodes = {};
       for (const id in this.data.players) {
@@ -155,9 +168,9 @@
         const g = el("g", { class: "player " + p.team }, this.layers.players);
         el("circle", { r: px(PLAYER_R), fill: p.team === "of" ? "#3b8ee8" : "#ef8a3c", stroke: p.team === "of" ? "#1b4f8f" : "#9a4a12", "stroke-width": 3 }, g);
         const label = p.team === "of" ? id : (p.label || "");
-        el("text", { "text-anchor": "middle", dy: p.team === "of" ? 7 : 6, "font-size": p.team === "of" ? 22 : 18, "font-weight": 700, fill: "#fff" }, g).textContent = label;
+        const text = el("text", { "text-anchor": "middle", dy: p.team === "of" ? 7 : 6, "font-size": p.team === "of" ? 22 : 18, "font-weight": 700, fill: "#fff" }, g); text.textContent = label;
         const ring = el("circle", { r: px(PLAYER_R) + 6, fill: "none", stroke: "#ffd23f", "stroke-width": 4, opacity: 0 }, g);
-        this.nodes[id] = { g, ring };
+        this.nodes[id] = { g, ring, text };
       }
       const bg = el("g", {}, this.layers.ball);
       el("circle", { r: 11, fill: "#ffd23f", stroke: "#7a5a00", "stroke-width": 2.5 }, bg);
@@ -233,24 +246,26 @@
       paths.innerHTML = ""; guides.innerHTML = ""; zones.innerHTML = "";
       const pf = pathsFor(this.seq.start, this.seq.actions);
       for (const m of pf.moves) {
-        el("polyline", { points: m.pts.map((p) => `${px(p[0])},${px(p[1])}`).join(" "), fill: "none",
+        el("polyline", { points: m.pts.map((p) => `${this.X(p[0])},${px(p[1])}`).join(" "), fill: "none",
           stroke: m.team === "of" ? "#1f2d5c" : "#b85c1a", "stroke-width": 4, "stroke-linejoin": "round", "stroke-linecap": "round",
           opacity: 0.55, "marker-end": "url(#arrowMove)", "stroke-dasharray": m.team === "of" ? "" : "8 6" }, paths);
       }
       for (const p of pf.passes) {
-        el("line", { x1: px(p.from.x), y1: px(p.from.y), x2: px(p.to.x), y2: px(p.to.y), stroke: "#d64545", "stroke-width": p.shoot ? 5 : 3.5,
+        el("line", { x1: this.X(p.from.x), y1: px(p.from.y), x2: this.X(p.to.x), y2: px(p.to.y), stroke: "#d64545", "stroke-width": p.shoot ? 5 : 3.5,
           "stroke-dasharray": p.fake ? "4 6" : "12 8", opacity: p.fake ? 0.5 : 0.75, "marker-end": "url(#arrowPass)" }, paths);
       }
       const gs = this.branch ? [] : (this.step.guides || []);
       for (const g of gs) {
         const grp = el("g", {}, guides);
-        el("circle", { cx: px(g.x), cy: px(g.y), r: 26, fill: "rgba(10,157,108,.12)", stroke: "#0a9d6c", "stroke-width": 4, "stroke-dasharray": "8 6" }, grp);
-        const short = g.short || "ポイント";
+        const gx = this.X(g.x);
+        el("circle", { cx: gx, cy: px(g.y), r: 26, fill: "rgba(10,157,108,.12)", stroke: "#0a9d6c", "stroke-width": 4, "stroke-dasharray": "8 6" }, grp);
+        const short = this.mirror ? mirrorLabel(g.short || "ポイント") : (g.short || "ポイント");
         const w = short.length * 24 + 24;
-        const side = g.side || "below";               // ラベル位置: below / left / right
-        let rx = px(g.x) - w / 2, ry = px(g.y) + 44;
-        if (side === "left") { rx = px(g.x) - w - 40; ry = px(g.y) - 19; }
-        if (side === "right") { rx = px(g.x) + 40; ry = px(g.y) - 19; }
+        let side = g.side || "below";               // ラベル位置: below / left / right
+        if (this.mirror) side = side === "left" ? "right" : side === "right" ? "left" : side;
+        let rx = gx - w / 2, ry = px(g.y) + 44;
+        if (side === "left") { rx = gx - w - 40; ry = px(g.y) - 19; }
+        if (side === "right") { rx = gx + 40; ry = px(g.y) - 19; }
         el("rect", { x: rx, y: ry, width: w, height: 38, rx: 8, fill: "#0a9d6c" }, grp);
         el("text", { x: rx + w / 2, y: ry + 27, "text-anchor": "middle", "font-size": 24, "font-weight": 700, fill: "#fff" }, grp).textContent = short;
       }
@@ -259,27 +274,29 @@
       const st = stateAt(this.seq.start, this.seq.actions, this.t);
       for (const id in st.pos) {
         const n = this.nodes[id], p = st.pos[id];
-        n.g.setAttribute("transform", `translate(${px(p.x)} ${px(p.y)})`);
+        n.g.setAttribute("transform", `translate(${this.X(p.x)} ${px(p.y)})`);
         n.ring.setAttribute("opacity", st.holder === id ? 1 : 0);
       }
       let b = st.ballPos;
       if (!b && st.holder) { const h = st.pos[st.holder]; b = { x: h.x + 0.45, y: h.y - 0.45 }; }
-      if (b) { this.ballNode.setAttribute("transform", `translate(${px(b.x)} ${px(b.y)})`); this.ballNode.setAttribute("opacity", 1); }
+      if (b) { this.ballNode.setAttribute("transform", `translate(${this.X(b.x)} ${px(b.y)})`); this.ballNode.setAttribute("opacity", 1); }
       else this.ballNode.setAttribute("opacity", 0);
       // zones
       const zl = this.layers.zones; zl.innerHTML = "";
       for (const z of st.zones) {
-        const [x, y, w, h] = z.rect;
+        let [x, y, w, h] = z.rect; if (this.mirror) x = CW - x - w;
         el("rect", { x: px(x), y: px(y), width: px(w), height: px(h), rx: 14, fill: "rgba(255,196,0,.12)", stroke: "#f2a900", "stroke-width": 4 }, zl);
-        if (z.label) el("text", { x: px(x + w) - 10, y: px(y) + 30, "text-anchor": "end", "font-size": 24, "font-weight": 700, fill: "#c98600" }, zl).textContent = z.label;
+        if (z.label) el("text", { x: this.mirror ? px(x) + 10 : px(x + w) - 10, y: px(y) + 30, "text-anchor": this.mirror ? "start" : "end", "font-size": 24, "font-weight": 700, fill: "#c98600" }, zl).textContent = z.label;
       }
       for (const b of st.blocks) {
-        el("rect", { x: px(b.x) - 34, y: px(b.y) - 44, width: 68, height: 8, rx: 3, fill: "#1f2d5c" }, zl);
+        el("rect", { x: this.X(b.x) - 34, y: px(b.y) - 44, width: 68, height: 8, rx: 3, fill: "#1f2d5c" }, zl);
       }
       for (const n of st.notes) {
-        const w = n.text.length * 20 + 20;
-        el("rect", { x: px(n.x), y: px(n.y) - 26, width: w, height: 36, rx: 8, fill: "rgba(31,45,92,.9)" }, zl);
-        el("text", { x: px(n.x) + 10, y: px(n.y), "font-size": 20, "font-weight": 700, fill: "#fff" }, zl).textContent = n.text;
+        const text = this.mirror ? mirrorLabel(n.text) : n.text;
+        const w = text.length * 20 + 20;
+        const nx = this.mirror ? this.X(n.x) - w : px(n.x);
+        el("rect", { x: nx, y: px(n.y) - 26, width: w, height: 36, rx: 8, fill: "rgba(31,45,92,.9)" }, zl);
+        el("text", { x: nx + 10, y: px(n.y), "font-size": 20, "font-weight": 700, fill: "#fff" }, zl).textContent = text;
       }
       if (st.shotDone) {
         el("text", { x: px(GOAL.x), y: -50 + 42, "text-anchor": "middle", "font-size": 26, "font-weight": 700, fill: "#d64545" }, zl).textContent = "シュート！";
@@ -287,5 +304,5 @@
     }
   }
 
-  window.TacticEngine = { Player, stateAt, duration };
+  window.TacticEngine = { Player, stateAt, duration, MIRROR_ID, mirrorLabel };
 })();
