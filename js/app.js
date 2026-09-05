@@ -5,7 +5,7 @@
   const entry = (window.TACTIC_LIST || []).find((t) => t.id === id);
   if (!entry) { document.body.innerHTML = "<p style='padding:20px'>セットが見つかりません。</p>"; return; }
   const s = document.createElement("script");
-  s.src = "tactics/" + entry.file + "?v=202609051243";
+  s.src = "tactics/" + entry.file + "?v=202609051509";
   s.onload = () => init(window.TACTICS[id]);
   document.head.appendChild(s);
 
@@ -88,6 +88,8 @@
     $("#prev").onclick = () => { player.auto = false; if (player.branch) player.backToMain(); else player.gotoStep(player.stepIndex - 1); };
     $("#next").onclick = () => { player.auto = false; player.gotoStep(player.stepIndex === data.steps.length - 1 ? 0 : player.stepIndex + 1); };
     $("#replay").onclick = () => player.restart(true);
+    // 最初から: ステップ1の頭に戻して再生（自動再生中ならそのまま続く）
+    $("#restartBtn").onclick = () => { player.gotoStep(0, true); window.scrollTo({ top: 0, behavior: "smooth" }); };
     $("#auto").onclick = () => player.setAuto(!player.auto);
     const speeds = [0.5, 1, 1.5];
     $("#speed").onclick = () => { player.speed = speeds[(speeds.indexOf(player.speed) + 1) % speeds.length]; renderPanel(); };
