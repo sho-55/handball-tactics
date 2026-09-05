@@ -5,7 +5,7 @@
   const entry = (window.TACTIC_LIST || []).find((t) => t.id === id);
   if (!entry) { document.body.innerHTML = "<p style='padding:20px'>セットが見つかりません。</p>"; return; }
   const s = document.createElement("script");
-  s.src = "tactics/" + entry.file + "?v=202609051221";
+  s.src = "tactics/" + entry.file + "?v=202609051243";
   s.onload = () => init(window.TACTICS[id]);
   document.head.appendChild(s);
 

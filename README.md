@@ -13,8 +13,8 @@ js/engine.js            コート描画・補間・ステップ/分岐制御
 js/app.js               再生ページのUI
 js/glossary.js          用語ヘルプ
 tactics/index.js        セット一覧の登録
-tactics/06-side-yugo.js 6番のデータ（配置・ステップ・分岐）
-SCRIPT_06.md            6番のアニメ台本表（指導者確認用。データから自動生成）
+tactics/NN-*.js         各セットのデータ（05 ユーゴ / 06 サイドユーゴ / 07 センターサイド / 08 CCダッポ）
+SCRIPT_NN.md            各セットのアニメ台本表（指導者確認用。データから自動生成）
 ```
 
 ## セットを追加する

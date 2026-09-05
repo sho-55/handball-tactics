@@ -1,0 +1,173 @@
+// CCダッポ（8番） きっかけシートのデータ
+// 座標はメートル。x: 0=左サイドライン 〜 20=右サイドライン。y: 0=ゴールライン 〜 下へ。
+window.TACTICS = window.TACTICS || {};
+window.TACTICS["08"] = {
+  id: "08",
+  title: "CCダッポ（8番）",
+  purpose: "相手のけん制を出にくくする。W（ウイング）のカラ走りから「急に」「縦の2対2」に持ち込む",
+  players: {
+    LW: { x: 1.3, y: 2.2, team: "of" },
+    LB: { x: 2.8, y: 7.8, team: "of" },
+    CB: { x: 10.4, y: 9.6, team: "of" },
+    PV: { x: 10.0, y: 6.4, team: "of" },
+    RB: { x: 16.8, y: 8.8, team: "of" },
+    RW: { x: 18.7, y: 2.2, team: "of" },
+    L1: { x: 3.2, y: 3.2, team: "df", label: "左1" },
+    L2: { x: 5.4, y: 5.4, team: "df", label: "左2" },
+    L3: { x: 7.9, y: 6.3, team: "df", label: "左3" },
+    R3: { x: 12.1, y: 6.3, team: "df", label: "右3" },
+    R2: { x: 14.6, y: 5.4, team: "df", label: "右2" },
+    R1: { x: 16.8, y: 3.2, team: "df", label: "右1" },
+  },
+  ball: "CB",
+  steps: [
+    // ---------------------------------------------------------------- (1)
+    {
+      title: "CCから始動。PVは始動側の2-3へ。LWはCC後、右の2-3へ",
+      text: "CBからLBへ。LBはアウトカットインを強く狙って右肩を前に入れ、後ろを回ってきたLWへボールを「左手」で渡す（CC）。PVは始動側の左2-3へ。LBはそのままW（サイド）の位置へ。",
+      notes: [
+        "LBの選択肢: ①LWへCC ②PVへパス ③1-2カットイン",
+        "LWの選択肢: ①CBへパス ②PVへパス（左3枚目が出た時）",
+      ],
+      actions: [
+        { t: 0.0, dur: 0.8, type: "pass", from: "CB", to: "LB" },
+        { t: 0.5, dur: 1.0, type: "move", who: "PV", to: [[6.6, 6.2]] },
+        { t: 0.6, dur: 1.4, type: "move", who: "LW", to: [[0.9, 5.2], [2.4, 7.6]] },
+        { t: 0.9, dur: 0.9, type: "move", who: "LB", to: [[3.4, 5.6]] },
+        { t: 1.2, dur: 0.6, type: "move", who: "L2", to: [[4.6, 6.6]] },
+        { t: 2.0, dur: 0.4, type: "pass", from: "LB", to: "LW" },
+        { t: 2.3, dur: 0.8, type: "move", who: "LB", to: [[1.4, 3.0]] },
+      ],
+      branches: [
+        { group: "LBの選択肢", label: "②PVへパス", from: 1.9, text: "左2枚目がLBに出てきて左2-3のPVが空いたら、PVへパス。",
+          actions: [{ t: 0.0, dur: 0.5, type: "pass", from: "LB", to: "PV" }, { t: 0.6, dur: 0.6, type: "shoot", who: "PV" }] },
+        { group: "LBの選択肢", label: "③1-2カットイン", from: 1.9, text: "左1枚目と左2枚目の間が空いていれば、そのままカットインしてシュート。",
+          actions: [{ t: 0.0, dur: 0.8, type: "move", who: "LB", to: [[3.6, 4.2]] }, { t: 0.8, dur: 0.6, type: "shoot", who: "LB" }] },
+        { group: "LWの選択肢", label: "②PVへパス（左3枚目が出た）", from: 2.4, text: "LWがボールを受けた時に左3枚目が出てきていたら、PVへパス。",
+          actions: [
+            { t: 0.0, dur: 0.6, type: "move", who: "L3", to: [[8.0, 7.8]] },
+            { t: 0.6, dur: 0.5, type: "pass", from: "LW", to: "PV" },
+            { t: 1.2, dur: 0.6, type: "shoot", who: "PV" },
+          ] },
+      ],
+    },
+    // ---------------------------------------------------------------- (2)
+    {
+      title: "CBは縦の2対2。LBはWへ。RBは少し左に寄ってダッポ準備",
+      text: "LWからCBへパス。CBはPVと左2枚目・左3枚目に対して縦の2対2。LWはそのまま9m沿いをカラ走りして右の2-3へ。RBは少し左に寄ってダッポの準備。",
+      notes: ["RBは右で2対2の準備。"],
+      actions: [
+        { t: 0.0, dur: 0.5, type: "move", who: "CB", to: [[7.4, 9.0]] },
+        { t: 0.3, dur: 0.6, type: "pass", from: "LW", to: "CB" },
+        { t: 0.9, dur: 2.2, type: "zone", rect: [4.8, 4.6, 4.8, 6.2], label: "縦の2対2" },
+        { t: 1.0, dur: 1.8, type: "move", who: "LW", to: [[8.0, 8.8], [13.4, 6.6]] },
+        { t: 1.0, dur: 0.6, type: "move", who: "CB", to: [[7.2, 8.0]] },
+        { t: 1.2, dur: 0.8, type: "move", who: "RB", to: [[14.6, 8.8]] },
+        { t: 1.4, dur: 0.6, type: "move", who: "L3", to: [[7.9, 7.0]] },
+      ],
+      branches: [
+        { group: "CBの選択肢", label: "①ロングシュート", from: 1.0, text: "左3枚目が出てこなければロングシュート。",
+          actions: [{ t: 0.0, dur: 0.7, type: "shoot", who: "CB" }] },
+        { group: "CBの選択肢", label: "②左3枚目を引き出してRBへ → PVは右3枚目裏へ", from: 1.0,
+          text: "左3枚目を引き出してからRBへパス。PVは右3枚目の裏へスライドし、RBからポストパス。",
+          actions: [
+            { t: 0.0, dur: 0.6, type: "move", who: "CB", to: [[7.6, 8.0]] },
+            { t: 0.2, dur: 0.7, type: "move", who: "L3", to: [[7.9, 7.8]] },
+            { t: 0.9, dur: 0.8, type: "pass", from: "CB", to: "RB" },
+            { t: 1.0, dur: 1.2, type: "move", who: "PV", to: [[11.0, 5.8]] },
+            { t: 1.9, dur: 0.6, type: "pass", from: "RB", to: "PV" },
+            { t: 2.6, dur: 0.6, type: "shoot", who: "PV" },
+          ] },
+        { group: "CBの選択肢", label: "③左1-2割（PVはアウトブロックに切替）", from: 1.0,
+          text: "PVが左2枚目にかぶられたら、PVは左2枚目のアウトブロックに切り替え。CBは左1枚目と左2枚目の間を割ってシュート。",
+          actions: [
+            { t: 0.0, dur: 0.6, type: "move", who: "L2", to: [[5.6, 6.4]] },
+            { t: 0.3, dur: 0.7, type: "block", who: "PV", to: [[4.6, 6.4]] },
+            { t: 0.8, dur: 1.0, type: "move", who: "CB", to: [[4.2, 8.0], [3.4, 5.0]] },
+            { t: 1.8, dur: 0.6, type: "shoot", who: "CB" },
+          ] },
+      ],
+    },
+    // ---------------------------------------------------------------- (3)
+    {
+      title: "RBは縦の2対2。CBはバックステップでワイド準備。PVはスライド",
+      text: "CBからRBへダッポ。右の2-3に入ったLWが右2枚目をブロックし、RBと縦の2対2。CBはバックステップして左でワイドの準備。PVは3-3へスライド。",
+      notes: [
+        "LWは右2枚目をブロック。",
+        "CBは左でもう一度2対2を仕掛ける準備。",
+        "【ポイント】RBの判断。基本は①②③でシュートまで持っていく。PVへのマークがきつい場合は④で(4)の逆展開を決めきる。",
+      ],
+      actions: [
+        { t: 0.0, dur: 0.8, type: "pass", from: "CB", to: "RB" },
+        { t: 0.6, dur: 0.5, type: "block", who: "LW", to: [[13.8, 6.4]] },
+        { t: 0.6, dur: 1.0, type: "move", who: "CB", to: [[5.0, 9.6]] },
+        { t: 0.6, dur: 1.0, type: "move", who: "PV", to: [[9.6, 6.4]] },
+        { t: 0.8, dur: 2.0, type: "zone", rect: [11.6, 4.6, 4.8, 6.4], label: "縦の2対2" },
+        { t: 0.9, dur: 0.6, type: "move", who: "L3", to: [[7.9, 6.3]] },
+      ],
+      branches: [
+        { group: "RBの選択肢", label: "①ロング（右3枚目出ない）", from: 0.9, text: "右3枚目が出てこなければロングシュート。",
+          actions: [{ t: 0.0, dur: 0.6, type: "move", who: "RB", to: [[14.6, 8.0]] }, { t: 0.6, dur: 0.7, type: "shoot", who: "RB" }] },
+        { group: "RBの選択肢", label: "②右3枚目つり出しLWバウンド", from: 0.9,
+          text: "右3枚目をつり出してから、ブロックしているLWへバウンドパス。LWがシュート。",
+          actions: [
+            { t: 0.0, dur: 0.6, type: "move", who: "RB", to: [[13.6, 8.0]] },
+            { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[12.2, 7.6]] },
+            { t: 0.9, dur: 0.5, type: "pass", from: "RB", to: "LW" },
+            { t: 1.0, dur: 0.6, type: "move", who: "LW", to: [[13.2, 5.8]] },
+            { t: 1.6, dur: 0.6, type: "shoot", who: "LW" },
+          ] },
+        { group: "RBの選択肢", label: "③PVパス（左3枚目いない）", from: 0.9, text: "左3枚目がPVについて来ていなければ、3-3のPVへポストパス。",
+          actions: [{ t: 0.0, dur: 0.6, type: "pass", from: "RB", to: "PV" }, { t: 0.7, dur: 0.6, type: "shoot", who: "PV" }] },
+        { group: "RBの選択肢", label: "④CBに逆展開（左3枚目がPVにかぶった）", from: 0.9,
+          text: "左3枚目がPVにかぶってポストパスが出せない時は、CBへ逆展開。(4)へ。",
+          actions: [
+            { t: 0.0, dur: 0.6, type: "move", who: "L3", to: [[9.0, 7.0]] },
+            { t: 0.6, dur: 0.9, type: "pass", from: "RB", to: "CB" },
+            { t: 1.6, dur: 0.9, type: "move", who: "CB", to: [[3.2, 5.6]] },
+            { t: 2.5, dur: 0.6, type: "shoot", who: "CB" },
+          ] },
+      ],
+    },
+    // ---------------------------------------------------------------- (4)
+    {
+      title: "右で決めきれない場合、RBからCBへ逆展開",
+      text: "RBからCBへ逆展開。PVは左2-3へ戻り、CBが左でもう一度2対2を仕掛ける。",
+      actions: [
+        { t: 0.0, dur: 0.9, type: "pass", from: "RB", to: "CB" },
+        { t: 0.4, dur: 1.0, type: "move", who: "PV", to: [[6.6, 6.2]] },
+        { t: 1.0, dur: 0.8, type: "move", who: "CB", to: [[4.6, 8.4]] },
+      ],
+      branches: [
+        { group: "CBの選択肢", label: "①アウト割り", from: 1.8, text: "左1枚目と左2枚目の間を外側に割ってシュート。",
+          actions: [{ t: 0.0, dur: 0.9, type: "move", who: "CB", to: [[3.0, 5.4]] }, { t: 0.9, dur: 0.6, type: "shoot", who: "CB" }] },
+        { group: "CBの選択肢", label: "②アウト引っ張りPVパス", from: 1.8,
+          text: "外側へ攻めて左2枚目を引っ張り、空いたPVへパス。",
+          actions: [
+            { t: 0.0, dur: 0.8, type: "move", who: "CB", to: [[3.4, 6.6]] },
+            { t: 0.2, dur: 0.7, type: "move", who: "L2", to: [[4.4, 6.4]] },
+            { t: 0.9, dur: 0.5, type: "pass", from: "CB", to: "PV" },
+            { t: 1.5, dur: 0.6, type: "shoot", who: "PV" },
+          ] },
+        { group: "CBの選択肢", label: "③左1枚目寄せてLBシュート", from: 1.8,
+          text: "左1枚目をCBに寄せてから、サイドにいるLBへパス。LBがシュート。",
+          actions: [
+            { t: 0.0, dur: 0.8, type: "move", who: "CB", to: [[3.0, 6.4]] },
+            { t: 0.2, dur: 0.7, type: "move", who: "L1", to: [[3.2, 5.0]] },
+            { t: 0.9, dur: 0.5, type: "pass", from: "CB", to: "LB" },
+            { t: 1.5, dur: 0.6, type: "shoot", who: "LB" },
+          ] },
+        { group: "補足・展開パターン", label: "振り子（LBをあげて半面4対3）", from: 0.9,
+          text: "OFが止まったら、LWを右に沈めたままLBを後ろへあげて右半面で4対3を作り、すぐ攻める。「振り子」。",
+          actions: [
+            { t: 0.0, dur: 0.8, type: "move", who: "RB", to: [[17.2, 8.4]] },
+            { t: 0.0, dur: 2.0, type: "move", who: "LB", to: [[2.4, 11.0], [9.0, 12.4], [13.8, 10.0]] },
+            { t: 0.0, dur: 4.0, type: "zone", rect: [10.0, 1.2, 9.8, 10.0], label: "半面4対3" },
+            { t: 2.1, dur: 0.8, type: "pass", from: "CB", to: "LB" },
+            { t: 3.0, dur: 0.8, type: "move", who: "LB", to: [[13.4, 8.2]] },
+            { t: 3.4, dur: 0.6, type: "shoot", who: "LB" },
+          ] },
+      ],
+    },
+  ],
+};

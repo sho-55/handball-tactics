@@ -1,0 +1,172 @@
+// センターサイド（7番） きっかけシートのデータ
+// 座標はメートル。x: 0=左サイドライン 〜 20=右サイドライン。y: 0=ゴールライン 〜 下へ。
+window.TACTICS = window.TACTICS || {};
+window.TACTICS["07"] = {
+  id: "07",
+  title: "センターサイド（7番）",
+  purpose: "LB/RBに「いい位置」で「最高の」ロングを打たせる",
+  players: {
+    LW: { x: 1.3, y: 2.2, team: "of" },
+    LB: { x: 3.6, y: 9.0, team: "of" },
+    CB: { x: 9.0, y: 9.6, team: "of" },
+    PV: { x: 10.0, y: 6.4, team: "of" },
+    RB: { x: 16.2, y: 9.6, team: "of" },
+    RW: { x: 18.7, y: 2.2, team: "of" },
+    L1: { x: 3.2, y: 3.2, team: "df", label: "左1" },
+    L2: { x: 5.4, y: 5.4, team: "df", label: "左2" },
+    L3: { x: 7.9, y: 6.3, team: "df", label: "左3" },
+    R3: { x: 12.1, y: 6.3, team: "df", label: "右3" },
+    R2: { x: 14.6, y: 5.4, team: "df", label: "右2" },
+    R1: { x: 16.8, y: 3.2, team: "df", label: "右1" },
+  },
+  ball: "LB",
+  steps: [
+    // ---------------------------------------------------------------- (1)
+    {
+      title: "LBからCBへ並行パス。CBが右2枚目のアウトを攻める",
+      text: "LBからCBへ並行パス。CBは右半面を攻められるよう受け位置を右にとり、右2枚目の外側（アウト）を攻める。RWはCBの後ろをクロスして中へ、RBはCBの後ろを回り込んでセンターへ。",
+      notes: [
+        "RBとLBで行うバッククロス（3番）を、CBとW（ウイング）で行う。",
+        "RBはロング準備の助走。両3枚目が出てこなければ狙う。",
+        "CBは原則RWへパス。",
+        "CBは右1枚目が来なければそのまま割っても良いが、実際は2枚目が守りに来る割合が高い。",
+        "【ポイント】CB/RWのクロスで右2枚目をアウトに引っ張り、左に空間を作ること。CBのパス受け位置に注意。",
+      ],
+      guides: [{ x: 11.0, y: 9.2, short: "受け位置は右", side: "below", label: "CBのパス受け位置", sub: "右半面を攻められるように、並行パスの受け位置を右にとる。" }],
+      actions: [
+        { t: 0.0, dur: 0.6, type: "move", who: "CB", to: [[11.0, 9.2]] },
+        { t: 0.2, dur: 0.8, type: "pass", from: "LB", to: "CB" },
+        { t: 1.0, dur: 1.2, type: "move", who: "CB", to: [[14.4, 7.8], [16.2, 6.0]] },
+        { t: 1.3, dur: 0.7, type: "move", who: "R2", to: [[14.9, 6.8]] },
+        { t: 0.8, dur: 1.6, type: "move", who: "RW", to: [[18.4, 5.4], [15.8, 8.6]] },
+        { t: 1.0, dur: 1.8, type: "move", who: "RB", to: [[14.4, 11.6], [11.0, 11.4], [9.5, 9.8]] },
+      ],
+      branches: [
+        { group: "CBの選択肢", label: "右1枚目が来なければそのまま割る", from: 2.2,
+          text: "右1枚目がCBに寄って来なければ、右1枚目と右2枚目の間をそのまま割ってシュート。",
+          actions: [{ t: 0.0, dur: 0.8, type: "move", who: "CB", to: [[16.8, 4.6]] }, { t: 0.8, dur: 0.6, type: "shoot", who: "CB" }] },
+      ],
+    },
+    // ---------------------------------------------------------------- (2)
+    {
+      title: "CBからRW、RWからRBへ",
+      text: "CBはクロスしてきたRWへパスし、そのまま右サイドの位置へ。RWは原則、センターへ回り込んだRBへ並行パス。LBは前へ出て次の準備。",
+      notes: [
+        "RWは原則RBへ並行パス。右3枚目が釣れたらPV、左2/3枚目がけん制ならLBのカラ走り。",
+        "RBの選択肢: ①両3枚目が出ない＝ロング ②左3枚目出る＝LBorPV ③左2枚目けん制＝LBカラ走り（LBは左2枚目観察） ④右3枚目来た＝RWリターン（RWは右2/3）",
+        "LBはけん制に合わせてカラ走り。",
+      ],
+      actions: [
+        { t: 0.0, dur: 0.5, type: "pass", from: "CB", to: "RW" },
+        { t: 0.2, dur: 1.4, type: "move", who: "CB", to: [[17.6, 4.6], [18.6, 3.0]] },
+        { t: 0.3, dur: 0.6, type: "move", who: "R2", to: [[14.6, 5.6]] },
+        { t: 0.7, dur: 0.7, type: "pass", from: "RW", to: "RB" },
+        { t: 0.7, dur: 0.6, type: "move", who: "RB", to: [[10.4, 9.2]] },
+        { t: 1.0, dur: 0.8, type: "move", who: "LB", to: [[4.8, 8.2]] },
+        { t: 1.5, dur: 0.8, type: "move", who: "RW", to: [[13.6, 8.0]] },
+      ],
+      branches: [
+        { group: "RWの選択肢", label: "右3枚目が釣れた → PV", from: 0.6,
+          text: "RWがボールを持った時に右3枚目が釣れて出てきたら、PVが右3枚目の裏へスライドしてポストパス。",
+          actions: [
+            { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[13.4, 7.8]] },
+            { t: 0.3, dur: 0.8, type: "move", who: "PV", to: [[12.2, 6.2]] },
+            { t: 1.1, dur: 0.5, type: "pass", from: "RW", to: "PV" },
+            { t: 1.7, dur: 0.6, type: "shoot", who: "PV" },
+          ] },
+        { group: "RBの選択肢", label: "①両3枚目が出ない＝ロング", from: 1.5,
+          text: "左右の3枚目が出てこなければ、RBがそのままロングシュート。",
+          actions: [{ t: 0.0, dur: 0.6, type: "move", who: "RB", to: [[10.4, 8.4]] }, { t: 0.6, dur: 0.7, type: "shoot", who: "RB" }] },
+        { group: "RBの選択肢", label: "②左3枚目出る＝LB or PV", from: 1.5,
+          text: "左3枚目が出てきたら、空いた裏へ入るPVか、左のLBへパス。",
+          actions: [
+            { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[8.8, 7.8]] },
+            { t: 0.3, dur: 0.8, type: "move", who: "PV", to: [[8.4, 6.1]] },
+            { t: 1.1, dur: 0.5, type: "pass", from: "RB", to: "PV" },
+            { t: 1.7, dur: 0.6, type: "shoot", who: "PV" },
+          ] },
+        { group: "RBの選択肢", label: "③左2枚目けん制＝LBカラ走り", from: 1.5,
+          text: "左2枚目がけん制に出てきたら、LBは左1枚目と左2枚目の間へカラ走り。RBからLBへパスしてシュート。",
+          actions: [
+            { t: 0.0, dur: 0.7, type: "move", who: "L2", to: [[6.0, 7.2]] },
+            { t: 0.3, dur: 1.0, type: "move", who: "LB", to: [[3.8, 5.4]] },
+            { t: 1.0, dur: 0.7, type: "pass", from: "RB", to: "LB" },
+            { t: 1.8, dur: 0.6, type: "shoot", who: "LB" },
+          ] },
+        { group: "RBの選択肢", label: "④右3枚目来た＝RWリターン", from: 1.5,
+          text: "右3枚目がRBに来たら、右2/3の間にいるRWへリターンパス。RWがその間を割ってシュート。",
+          actions: [
+            { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[11.4, 8.0]] },
+            { t: 0.8, dur: 0.5, type: "pass", from: "RB", to: "RW" },
+            { t: 1.3, dur: 0.9, type: "move", who: "RW", to: [[13.2, 6.4]] },
+            { t: 2.2, dur: 0.6, type: "shoot", who: "RW" },
+          ] },
+      ],
+    },
+    // ---------------------------------------------------------------- (3)
+    {
+      title: "RBがLBへパスして左2/3にブロック。RWは右2枚目にブロック",
+      text: "RBはLBへパスし、左2枚目と左3枚目の間にインブロック。RWは少し遅れて右2枚目に立つだけのインブロック。LBは中へ切り込みながらロングの助走。",
+      notes: [
+        "RBは左2枚目にインブロック。",
+        "RWは少し遅れて右2枚目に立つだけインブロック。※ブロッキング（反則）注意。",
+        "【ポイント】RWのブロック時間を短く。LBが9mで思い切り踏み切って打ち切る。",
+      ],
+      guides: [{ x: 8.4, y: 9.4, short: "9mで踏み切る", side: "below", label: "LBの踏み切り位置", sub: "9mライン上で思い切り踏み切って打ち切る。" }],
+      actions: [
+        { t: 0.0, dur: 0.7, type: "pass", from: "RB", to: "LB" },
+        { t: 0.8, dur: 1.0, type: "block", who: "RB", to: [[7.0, 7.3]] },
+        { t: 1.0, dur: 0.9, type: "block", who: "RW", to: [[14.0, 6.8]] },
+        { t: 0.9, dur: 1.5, type: "move", who: "LB", to: [[6.2, 10.4], [8.4, 9.4]] },
+      ],
+    },
+    // ---------------------------------------------------------------- (4)
+    {
+      title: "LBのロングを軸にシュートで終わる",
+      text: "ブロックを使ってLBがロングシュート。LWはLBまでボールが回った時点でDFへ戻る。CBはリバウンド回収とディレイ要員として残る。",
+      notes: [
+        "両3枚目が出てくるようなら、RB/PV/RWのうち「空間を作れているポスト」に落とす。",
+        "RBのインブロックも必ず体を内側に向けて、ポストパスを受ける体勢を作る。",
+        "RWは落ちてから時間があるためブロッキング注意。",
+      ],
+      actions: [
+        { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[7.0, 7.3]] },
+        { t: 0.0, dur: 0.1, type: "block", who: "RW", to: [[14.0, 6.8]] },
+        { t: 0.0, dur: 1.6, type: "move", who: "LW", to: [[1.3, 12.8]] },
+        { t: 0.4, dur: 0.8, type: "shoot", who: "LB" },
+      ],
+      branches: [
+        { group: "3枚目が出てきた時", label: "空いたポストに落とす（PV）", from: 0.0,
+          text: "両3枚目がLBに出てくるなら、空間を作れているポストへ落とす。ここではPVへ。",
+          actions: [
+            { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[7.0, 7.3]] },
+            { t: 0.0, dur: 0.1, type: "block", who: "RW", to: [[14.0, 6.8]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[8.6, 7.9]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[11.2, 7.9]] },
+            { t: 0.8, dur: 0.5, type: "pass", from: "LB", to: "PV" },
+            { t: 1.4, dur: 0.6, type: "shoot", who: "PV" },
+          ] },
+        { group: "3枚目が出てきた時", label: "空いたポストに落とす（RB）", from: 0.0,
+          text: "左3枚目が出て、インブロックしているRBの前が空いたらRBへ。RBは体を内側に向けて受ける。",
+          actions: [
+            { t: 0.0, dur: 0.1, type: "block", who: "RW", to: [[14.0, 6.8]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[8.8, 8.0]] },
+            { t: 0.6, dur: 0.6, type: "move", who: "RB", to: [[6.6, 6.4]] },
+            { t: 0.9, dur: 0.5, type: "pass", from: "LB", to: "RB" },
+            { t: 1.5, dur: 0.6, type: "shoot", who: "RB" },
+          ] },
+        { group: "補足・展開パターン（裏）", label: "RWが下がってシュートフェイクからアウトカットイン", from: 0.0,
+          text: "2本目は（裏）。RWはRBへパスした後いったん下がる。LBはロング狙いから右2枚目を中に寄せ、シュートフェイクからRWへ並行パス。RWがアウトカットイン。",
+          actions: [
+            { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[7.0, 7.3]] },
+            { t: 0.0, dur: 0.9, type: "move", who: "RW", to: [[15.8, 8.8]] },
+            { t: 0.6, dur: 0.7, type: "move", who: "R2", to: [[13.2, 6.6]] },
+            { t: 0.9, dur: 0.6, type: "fake", from: "LB", to: "PV" },
+            { t: 1.6, dur: 0.6, type: "pass", from: "LB", to: "RW" },
+            { t: 1.7, dur: 1.0, type: "move", who: "RW", to: [[17.2, 5.0]] },
+            { t: 2.7, dur: 0.6, type: "shoot", who: "RW" },
+          ] },
+      ],
+    },
+  ],
+};
