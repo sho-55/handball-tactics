@@ -110,3 +110,4 @@ canvas#pov { width: 100%; display: block; border-radius: 8px; background: #d5dde
 .stopbox .small { font-size: 12px; opacity: .95; margin-top: 2px; }
 @media (min-width: 760px) { .pov-wrap { position: sticky; top: 0; align-self: start; } }
 .controls .primary.resume { background: var(--accent); }
+.card.pov { border-left: 5px solid var(--ball); background: #fffbea; }

@@ -5,7 +5,7 @@
   const entry = (window.TACTIC_LIST || []).find((t) => t.id === id);
   if (!entry) { document.body.innerHTML = "<p style='padding:20px'>セットが見つかりません。</p>"; return; }
   const s = document.createElement("script");
-  s.src = "tactics/" + entry.file + "?v=202609132211";
+  s.src = "tactics/" + entry.file + "?v=202609132218";
   s.onload = () => init(window.TACTICS[id]);
   document.head.appendChild(s);
 
@@ -52,7 +52,7 @@
     }
     // 上から図のページ → 目線ページへのリンク（index.js で pov を持つセットだけ）
     const povLink = $("#povLink");
-    if (povLink && entry.pov && entry.pov.length) { povLink.hidden = false; povLink.href = `pov.html?id=${id}&pos=${entry.pov[0]}`; povLink.textContent = `${entry.pov[0]}目線（試作）`; }
+    if (povLink && entry.pov && entry.pov.length) { povLink.hidden = false; povLink.href = `pov.html?id=${id}&pos=${entry.pov[0]}`; povLink.textContent = `👀 ${entry.pov[0]}目線`; }
 
     const dots = $("#dots");
     data.steps.forEach((st, i) => { const d = document.createElement("div"); d.className = "dot"; d.textContent = i + 1; d.onclick = () => player.gotoStep(i); dots.appendChild(d); });

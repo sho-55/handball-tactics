@@ -4,19 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ハンド動き解説</title>
-<link rel="stylesheet" href="css/style.css?v=202609132211">
+<link rel="stylesheet" href="css/style.css?v=202609132218">
 </head>
 <body>
 <header class="top"><h1>ハンド動き解説（きっかけシート）</h1></header>
 <div class="purpose">セットを選ぶと、駒が動いて流れを説明します。</div>
 <div class="list" id="list"></div>
-<script src="tactics/index.js?v=202609132211"></script>
+<script src="tactics/index.js?v=202609132218"></script>
 <script>
   const list = document.getElementById("list");
   window.TACTIC_LIST.forEach((t) => {
     const a = document.createElement("a"); a.className = "card"; a.href = "tactic.html?id=" + t.id;
     a.innerHTML = `<div class="no">セット ${t.id}</div><h2>${t.title}</h2><p>${t.summary}</p>`;
     list.appendChild(a);
+    // 目線ページがあるセットは、その下に目線リンクを出す
+    (t.pov || []).forEach((pos) => {
+      const b = document.createElement("a"); b.className = "card pov"; b.href = `pov.html?id=${t.id}&pos=${pos}`;
+      b.innerHTML = `<div class="no">セット ${t.id}　目線ビュー</div><h2>👀 ${pos}目線で見る</h2><p>${pos}の目の高さから、誰を見て・どこにパスを出すかを体験する（${pos}の選択肢を収録）</p>`;
+      list.appendChild(b);
+    });
   });
   [["07", "センターサイド（7番）"], ["08", "CCダッポ（8番）"]].forEach(([no, name]) => {
     if (window.TACTIC_LIST.some((t) => t.id === no)) return;
