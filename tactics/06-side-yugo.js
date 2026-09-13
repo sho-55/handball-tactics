@@ -85,7 +85,7 @@ window.TACTICS["06"] = {
       actions: [
         { t: 0.0, dur: 0.7, type: "pass", from: "LW", to: "CB" },
         { t: 0.8, dur: 0.8, type: "move", who: "CB", to: [[4.4, 8.0]] },
-        { t: 0.9, dur: 0.8, type: "move", who: "L2", to: [[4.7, 7.1]] },
+        { t: 0.9, dur: 0.8, type: "move", who: "L2", to: [[4.6, 6.9]] },
         { t: 1.9, dur: 0.7, type: "pass", from: "CB", to: "LB" },
         { t: 1.9, dur: 0.6, type: "move", who: "LB", to: [[10.3, 8.8]] },
         { t: 2.0, dur: 1.0, type: "move", who: "PV", to: [[6.0, 6.3]] },
@@ -104,8 +104,9 @@ window.TACTICS["06"] = {
           group: "CBの選択肢", label: "②スライドPVにパス", from: 1.9,
           text: "PVが左2枚目の裏にスライドし、左3枚目がついてこなければPVへパス。PVはターンしてシュート。",
           actions: [
-            { t: 0.0, dur: 0.9, type: "move", who: "PV", to: [[6.0, 6.3]] },
-            { t: 1.0, dur: 0.6, type: "pass", from: "CB", to: "PV" },
+            { t: 0.0, dur: 0.6, type: "move", who: "L2", to: [[4.2, 7.0]] },   // 左2はCBの外側に残る
+            { t: 0.0, dur: 0.9, type: "move", who: "PV", to: [[6.4, 6.2]] },
+            { t: 1.0, dur: 0.6, type: "pass", from: "CB", to: "PV", kind: "bounce" },   // 左2の内側をバウンドで
             { t: 1.7, dur: 0.6, type: "shoot", who: "PV" },
           ],
         },
@@ -114,8 +115,8 @@ window.TACTICS["06"] = {
           text: "CBが左1枚目と左2枚目の間を外側（アウト）に割る。左1枚目が寄ってきたらLWへパスしてLWがシュート。",
           actions: [
             { t: 0.0, dur: 0.9, type: "move", who: "CB", to: [[2.8, 6.2]] },
-            { t: 0.2, dur: 0.8, type: "move", who: "L1", to: [[2.9, 4.6]] },
-            { t: 1.0, dur: 0.5, type: "pass", from: "CB", to: "LW" },
+            { t: 0.2, dur: 0.8, type: "move", who: "L1", to: [[3.1, 4.7]] },
+            { t: 1.0, dur: 0.5, type: "pass", from: "CB", to: "LW", kind: "bounce" },   // 寄ってきた左1の横をバウンドで
             { t: 1.3, dur: 0.6, type: "move", who: "LW", to: [[1.6, 3.6]] },
             { t: 1.9, dur: 0.6, type: "shoot", who: "LW" },
           ],
@@ -125,8 +126,8 @@ window.TACTICS["06"] = {
           text: "CBが内側（イン）に攻めて左3枚目を寄せる。左3枚目が寄ったらLBへパス。LBは左3枚目と右3枚目の間に並行で走り込んでシュート。",
           actions: [
             { t: 0.0, dur: 0.9, type: "move", who: "CB", to: [[6.0, 7.8]] },
-            { t: 0.2, dur: 0.8, type: "move", who: "L3", to: [[7.1, 7.3]] },
-            { t: 1.0, dur: 0.6, type: "pass", from: "CB", to: "LB" },
+            { t: 0.2, dur: 0.8, type: "move", who: "L3", to: [[6.0, 6.9]] },   // CBの正面に寄る（横のコースが空く）
+            { t: 1.0, dur: 0.6, type: "pass", from: "CB", to: "LB", kind: "bounce" },   // 左3の横を低いパスで
             { t: 1.0, dur: 1.0, type: "move", who: "LB", to: [[8.7, 6.9]] },
             { t: 2.0, dur: 0.6, type: "shoot", who: "LB" },
           ],
@@ -146,7 +147,9 @@ window.TACTICS["06"] = {
           group: "補足・展開パターン", label: "PVのスライドが早すぎた時", from: 0.0,
           text: "PVのスライドが早すぎてCBに渡す前に左2枚目裏に入ってしまった場合は、LWからPVへ直接パス。",
           actions: [
-            { t: 0.0, dur: 0.8, type: "move", who: "PV", to: [[6.0, 6.3]] },
+            { t: 0.0, dur: 0.6, type: "move", who: "L2", to: [[5.6, 7.0]] },   // 左2はCBへ出かかっている（裏が空く）
+            { t: 0.0, dur: 0.6, type: "move", who: "LW", to: [[1.7, 3.6]] },   // LWは少し前に出て角度を作る
+            { t: 0.0, dur: 0.8, type: "move", who: "PV", to: [[6.4, 6.0]] },
             { t: 0.9, dur: 0.7, type: "pass", from: "LW", to: "PV" },
             { t: 1.7, dur: 0.6, type: "shoot", who: "PV" },
           ],
@@ -158,7 +161,7 @@ window.TACTICS["06"] = {
             { t: 0.0, dur: 0.9, type: "move", who: "PV", to: [[7.8, 7.9]] },
             { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[11.5, 7.6]] },
             { t: 0.9, dur: 0.6, type: "pass", from: "CB", to: "PV" },
-            { t: 1.0, dur: 1.1, type: "move", who: "LB", to: [[11.8, 8.4], [13.2, 6.4]] },
+            { t: 1.0, dur: 1.1, type: "move", who: "LB", to: [[10.2, 7.6], [11.2, 6.0]] },   // 3-3の間（左3と右3の間）を割って受ける
             { t: 1.6, dur: 0.6, type: "pass", from: "PV", to: "LB" },
             { t: 2.3, dur: 0.6, type: "shoot", who: "LB" },
           ],
@@ -189,7 +192,7 @@ window.TACTICS["06"] = {
       ],
       actions: [
         { t: 0.0, dur: 0.6, type: "move", who: "LB", to: [[10.2, 8.3]] },
-        { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[11.3, 7.6]] },
+        { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[10.6, 7.0]] },   // LBの正面にけん制（RBへのコースは空く）
         { t: 0.3, dur: 0.8, type: "move", who: "L2", to: [[5.3, 5.8]] },
         { t: 0.7, dur: 1.2, type: "move", who: "PV", to: [[11.9, 6.4]] },
         { t: 0.6, dur: 0.9, type: "move", who: "RB", to: [[17.6, 7.4]] },
@@ -221,9 +224,9 @@ window.TACTICS["06"] = {
           ] } },
           actions: [
             { t: 0.0, dur: 0.6, type: "move", who: "LB", to: [[10.6, 7.9]] },
-            { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[11.6, 7.4]] },
+            { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[10.4, 6.7]] },   // LBの正面に出る
             { t: 0.6, dur: 1.2, type: "move", who: "PV", to: [[11.9, 6.4]] },
-            { t: 1.9, dur: 0.6, type: "pass", from: "LB", to: "PV" },
+            { t: 1.9, dur: 0.6, type: "pass", from: "LB", to: "PV", kind: "bounce" },   // 右3の横をバウンドで
             { t: 2.6, dur: 0.6, type: "shoot", who: "PV" },
           ],
         },
@@ -238,9 +241,9 @@ window.TACTICS["06"] = {
           actions: [
             { t: 0.0, dur: 1.0, type: "move", who: "LB", to: [[12.8, 7.3]] },
             { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[11.6, 7.4]] },
-            { t: 0.4, dur: 0.7, type: "move", who: "R2", to: [[14.1, 6.2]] },
-            { t: 0.4, dur: 1.0, type: "move", who: "RB", to: [[15.8, 5.2]] },   // 早めに走り出す（目線でRBが見えるように）
-            { t: 1.2, dur: 0.6, type: "pass", from: "LB", to: "RB" },
+            { t: 0.4, dur: 0.7, type: "move", who: "R2", to: [[13.0, 6.1]] },   // LBの正面に寄る（横のコースが空く）
+            { t: 0.4, dur: 1.0, type: "move", who: "RB", to: [[16.0, 5.0]] },   // 早めに走り出す（目線でRBが見えるように）
+            { t: 1.2, dur: 0.6, type: "pass", from: "LB", to: "RB", kind: "bounce" },   // 右2の横を低いパスで
             { t: 1.9, dur: 0.6, type: "shoot", who: "RB" },
           ],
         },
@@ -255,11 +258,11 @@ window.TACTICS["06"] = {
           ] } },
           actions: [
             { t: 0.0, dur: 0.6, type: "move", who: "LB", to: [[10.6, 7.9]] },
-            { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[11.6, 7.4]] },
-            { t: 0.8, dur: 0.7, type: "fake", from: "LB", to: "RB" },
+            { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[10.4, 6.7]] },   // LBの正面に出る
+            { t: 0.8, dur: 0.7, type: "fake", from: "LB", to: "RB", kind: "lob" },       // 頭上を通すフェイク
             { t: 1.0, dur: 0.7, type: "move", who: "R2", to: [[15.7, 6.6]] },
             { t: 1.3, dur: 1.0, type: "move", who: "RB", to: [[13.8, 6.3]] },
-            { t: 1.9, dur: 0.6, type: "pass", from: "LB", to: "RB" },
+            { t: 1.9, dur: 0.6, type: "pass", from: "LB", to: "RB", kind: "lob" },       // 右3の頭上を越えて
             { t: 2.6, dur: 0.6, type: "shoot", who: "RB" },
           ],
         },
@@ -308,9 +311,9 @@ window.TACTICS["06"] = {
             { t: 1.6, face: "GOAL", look: "RW", say: "RWがシュート" },
           ] } },
           actions: [
-            { t: 0.0, dur: 0.7, type: "move", who: "R1", to: [[17.2, 5.0]] },
-            { t: 0.3, dur: 1.0, type: "move", who: "RW", to: [[16.3, 3.5]] },
-            { t: 1.0, dur: 0.5, type: "pass", from: "RB", to: "RW" },
+            { t: 0.0, dur: 0.7, type: "move", who: "R1", to: [[17.4, 5.2]] },
+            { t: 0.3, dur: 1.0, type: "move", who: "RW", to: [[15.6, 3.6]] },   // 右1の内側へ並行
+            { t: 1.0, dur: 0.5, type: "pass", from: "RB", to: "RW", kind: "bounce" },   // 出てきた右1の横をバウンドで
             { t: 1.6, dur: 0.6, type: "shoot", who: "RW" },
           ],
         },
@@ -323,9 +326,9 @@ window.TACTICS["06"] = {
             { t: 1.7, face: "GOAL", look: "PV", say: "PVがターンしてシュート" },
           ] } },
           actions: [
-            { t: 0.0, dur: 0.7, type: "move", who: "R2", to: [[16.6, 6.4]] },   // RBとゴールの間に寄せる（目線でPVが見えるように）
+            { t: 0.0, dur: 0.7, type: "move", who: "R2", to: [[16.9, 6.2]] },   // RBとゴールの間に寄せる（横のコースが空く）
             { t: 0.2, dur: 0.8, type: "move", who: "PV", to: [[13.4, 6.0]] },
-            { t: 1.0, dur: 0.6, type: "pass", from: "RB", to: "PV" },
+            { t: 1.0, dur: 0.6, type: "pass", from: "RB", to: "PV", kind: "bounce" },   // 右2の横をバウンドで
             { t: 1.7, dur: 0.6, type: "shoot", who: "PV" },
           ],
         },

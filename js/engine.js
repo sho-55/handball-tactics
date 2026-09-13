@@ -17,6 +17,26 @@
   const MIRROR_ID = { LW: "RW", RW: "LW", LB: "RB", RB: "LB", CB: "CB", PV: "PV", L1: "R1", L2: "R2", L3: "R3", R1: "L1", R2: "L2", R3: "L3" };
   const mirrorLabel = (s) => String(s).replace(/[左右]/g, (c) => (c === "左" ? "右" : "左"));
   const ease = (u) => (u < 0.5 ? 2 * u * u : -1 + (4 - 2 * u) * u);
+  const LANE_LEAD = 0.6;                                     // パスの何秒前からコースを見せるか
+  const LANE_W = 1.0;                                         // コースの幅(m)
+  // パスの高さ(m)。kind: 無し=胸の高さ / "bounce"=床で跳ねる / "lob"=頭上を越える
+  const ballHeight = (kind, u) => {
+    if (kind === "lob") return 1.2 + 1.6 * Math.sin(Math.PI * u);
+    if (kind === "bounce") return u < 0.65 ? 1.2 * (1 - u / 0.65) : 1.0 * ((u - 0.65) / 0.35);
+    return 1.2;
+  };
+  // コース上のDFとの最短距離(m)。線分 from→to から各DFまでの距離の最小
+  function laneClearance(pos, team, from, to) {
+    const a = pos[from], b = pos[to]; let best = Infinity;
+    const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+    for (const id in pos) {
+      if (team[id] !== "df") continue;
+      const p = pos[id]; const u = L2 === 0 ? 0 : clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / L2, 0, 1);
+      best = Math.min(best, Math.hypot(p.x - (a.x + dx * u), p.y - (a.y + dy * u)));
+    }
+    return best;
+  }
+  const laneLimit = (kind) => (kind ? 0.7 : 1.0);            // 取られない目安。バウンド/頭上は体の横を抜けるので短め
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   function pointOnPath(pts, u) {
@@ -45,10 +65,12 @@
   // 状態計算: startState から actions を t 秒進めた状態を返す
   function stateAt(startState, actions, t) {
     const pos = {}; for (const id in startState.pos) pos[id] = { ...startState.pos[id] };
-    let holder = startState.holder, ballPos = null, shotDone = false;
-    const zones = [], activeMoves = [], notes = [], blocks = [];
+    let holder = startState.holder, ballPos = null, shotDone = false, ballZ = 1.2;
+    const zones = [], activeMoves = [], notes = [], blocks = [], lanes = [];
     const sorted = [...actions].sort((a, b) => a.t - b.t);
     for (const a of sorted) {
+      // パスコース: パスの LANE_LEAD 秒前から、ボールが届くまで表示
+      if (a.type === "pass" && t >= a.t - LANE_LEAD && t < a.t + a.dur) lanes.push({ from: a.from, to: a.to, kind: a.kind || null, started: t >= a.t });
       if (t < a.t) continue;
       let u = clamp((t - a.t) / a.dur, 0, 1); if (u > 1 - 1e-6) u = 1;
       if (a.type === "move") {
@@ -57,12 +79,12 @@
         pos[a.who] = p; if (u < 1) activeMoves.push(a.who);
       } else if (a.type === "pass") {
         const from = pos[a.from], to = pos[a.to];
-        if (u < 1) { holder = null; ballPos = { x: from.x + (to.x - from.x) * u, y: from.y + (to.y - from.y) * u }; }
+        if (u < 1) { holder = null; ballPos = { x: from.x + (to.x - from.x) * u, y: from.y + (to.y - from.y) * u }; ballZ = ballHeight(a.kind, u); }
         else holder = a.to;
       } else if (a.type === "fake") {
         const from = pos[a.from], to = pos[a.to];
         const k = 0.35 * Math.sin(Math.PI * u);
-        if (u < 1) ballPos = { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
+        if (u < 1) { ballPos = { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k }; ballZ = ballHeight(a.kind, k); }
       } else if (a.type === "shoot") {
         const from = pos[a.who];
         if (u < 1) { holder = null; ballPos = { x: from.x + (GOAL.x - from.x) * u, y: from.y + (GOAL.y + 0.3 - from.y) * u }; }
@@ -79,7 +101,8 @@
       }
       // wait: 何もしない（間を作る）
     }
-    return { pos, holder, ballPos, zones, activeMoves, shotDone, notes, blocks };
+    for (const ln of lanes) { ln.clearance = laneClearance(pos, startState.team, ln.from, ln.to); ln.ok = ln.clearance >= laneLimit(ln.kind); }
+    return { pos, holder, ballPos, ballZ, zones, activeMoves, shotDone, notes, blocks, lanes };
   }
 
   // 経路の見た目(ポリライン・パス線)をステップ開始状態から計算
@@ -92,7 +115,7 @@
         moves.push({ who: a.who, team: startState.team[a.who], pts: [[s.x, s.y], ...a.to], t: a.t, end: a.t + a.dur });
       } else if (a.type === "pass" || a.type === "fake") {
         const s = stateAt(startState, actions, a.t).pos, e = stateAt(startState, actions, a.t + a.dur).pos;
-        passes.push({ from: s[a.from], to: e[a.to], t: a.t, end: a.t + a.dur, fake: a.type === "fake" });
+        passes.push({ from: s[a.from], to: e[a.to], t: a.t, end: a.t + a.dur, fake: a.type === "fake", kind: a.kind || null });
       } else if (a.type === "shoot") {
         const s = stateAt(startState, actions, a.t).pos[a.who];
         passes.push({ from: s, to: { x: GOAL.x, y: GOAL.y + 0.3 }, t: a.t, end: a.t + a.dur, shoot: true });
@@ -254,6 +277,11 @@
       for (const p of pf.passes) {
         el("line", { x1: this.X(p.from.x), y1: px(p.from.y), x2: this.X(p.to.x), y2: px(p.to.y), stroke: "#d64545", "stroke-width": p.shoot ? 5 : 3.5,
           "stroke-dasharray": p.fake ? "4 6" : "12 8", opacity: p.fake ? 0.5 : 0.75, "marker-end": "url(#arrowPass)" }, paths);
+        if (p.kind) {                                       // バウンド / 頭上 のラベル
+          const mx = (this.X(p.from.x) + this.X(p.to.x)) / 2, my = (px(p.from.y) + px(p.to.y)) / 2, label = p.kind === "bounce" ? "バウンド" : "頭上";
+          el("rect", { x: mx - 40, y: my - 14, width: 80, height: 26, rx: 6, fill: "#d64545", opacity: 0.85 }, paths);
+          el("text", { x: mx, y: my + 6, "text-anchor": "middle", "font-size": 18, "font-weight": 700, fill: "#fff" }, paths).textContent = label;
+        }
       }
       const gs = this.branch ? [] : (this.step.guides || []);
       for (const g of gs) {
@@ -282,8 +310,15 @@
       if (!b && st.holder) { const h = st.pos[st.holder]; b = { x: h.x + 0.45, y: h.y - 0.45 }; }
       if (b) { this.ballNode.setAttribute("transform", `translate(${this.X(b.x)} ${px(b.y)})`); this.ballNode.setAttribute("opacity", 1); }
       else this.ballNode.setAttribute("opacity", 0);
+      this.ballNode.firstChild.setAttribute("r", Math.round((8 + 3 * (st.ballPos ? st.ballZ : 1.2)) * 10) / 10);   // 高いほど大きく、床に近いほど小さく
       // zones
       const zl = this.layers.zones; zl.innerHTML = "";
+      // パスコース: 出し手→受け手の帯。DFがコース上にいれば赤(データの自己チェックにもなる)
+      for (const ln of st.lanes) {
+        const a = st.pos[ln.from], c = st.pos[ln.to];
+        el("line", { x1: this.X(a.x), y1: px(a.y), x2: this.X(c.x), y2: px(c.y), stroke: ln.ok ? "#0a9d6c" : "#d64545", "stroke-width": px(LANE_W),
+          "stroke-linecap": "round", opacity: ln.started ? 0.18 : 0.3 }, zl);
+      }
       for (const z of st.zones) {
         let [x, y, w, h] = z.rect; if (this.mirror) x = CW - x - w;
         el("rect", { x: px(x), y: px(y), width: px(w), height: px(h), rx: 14, fill: "rgba(255,196,0,.12)", stroke: "#f2a900", "stroke-width": 4 }, zl);
@@ -306,5 +341,5 @@
     }
   }
 
-  window.TacticEngine = { Player, stateAt, duration, MIRROR_ID, mirrorLabel, drawCourt, GOAL, CW, CH, M };
+  window.TacticEngine = { Player, stateAt, duration, MIRROR_ID, mirrorLabel, drawCourt, GOAL, CW, CH, M, laneClearance, laneLimit, LANE_W };
 })();

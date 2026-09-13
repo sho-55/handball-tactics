@@ -103,7 +103,7 @@ window.TACTICS["05"] = {
           ] } },
           text: "右3枚目が出てきたら、PVはその裏へスライド。LBはRBへパスし、RBからPVへポストパス。",
           actions: [
-            { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[10.8, 8.0]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[10.0, 7.4]] },   // LBの正面に出る（RBへの横パスのコースは空く）
             { t: 0.4, dur: 0.9, type: "move", who: "PV", to: [[12.0, 6.3]] },
             { t: 0.8, dur: 0.8, type: "pass", from: "LB", to: "RB" },
             { t: 1.7, dur: 0.6, type: "pass", from: "RB", to: "PV" },
@@ -117,7 +117,7 @@ window.TACTICS["05"] = {
           ] } },
           text: "左3枚目が出てきたら、PVはその裏へスライド。LBはCBへパスし、CBからPVへポストパス。",
           actions: [
-            { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[8.6, 8.0]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[9.2, 7.4]] },   // LBの正面に出る（CBへの横パスのコースは空く）
             { t: 0.4, dur: 0.9, type: "move", who: "PV", to: [[7.6, 6.3]] },
             { t: 0.8, dur: 0.7, type: "pass", from: "LB", to: "CB" },
             { t: 1.6, dur: 0.6, type: "pass", from: "CB", to: "PV" },
@@ -132,7 +132,7 @@ window.TACTICS["05"] = {
           ] } },
           text: "右3枚目がけん制に出てきたら、PVが中間（右3枚目の前）でもらい、右側でRBと3対2を作る。",
           actions: [
-            { t: 0.0, dur: 0.6, type: "move", who: "R3", to: [[10.4, 7.8]] },
+            { t: 0.0, dur: 0.6, type: "move", who: "R3", to: [[10.4, 7.2]] },   // けん制で前に出る（PVへのコースは横に空く）
             { t: 0.2, dur: 0.7, type: "move", who: "PV", to: [[11.9, 8.0]] },
             { t: 0.9, dur: 0.5, type: "pass", from: "LB", to: "PV" },
             { t: 1.0, dur: 2.4, type: "zone", rect: [11.6, 1.2, 8.2, 7.6], label: "3対2" },
@@ -177,7 +177,7 @@ window.TACTICS["05"] = {
       text: "右3枚目がLBに釣れて出てきたら、LBは対角のRBへパス。PVはその裏（右3枚目の位置）へスライドする。RBはワイドで広い1対1。",
       notes: ["【ポイント】PVは縦の2対2から、すぐRBの1対1に加勢して2対1をつくる。"],
       actions: [
-        { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[10.9, 7.7]] },
+        { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[10.3, 7.2]] },   // LBの正面に釣れる（対角RBへのコースは空く）
         { t: 0.5, dur: 1.0, type: "move", who: "PV", to: [[12.4, 6.3]] },
         { t: 0.8, dur: 0.9, type: "pass", from: "LB", to: "RB" },
         { t: 0.8, dur: 0.8, type: "move", who: "RB", to: [[17.6, 7.4]] },
@@ -215,7 +215,7 @@ window.TACTICS["05"] = {
           ] } },
           actions: [
             { t: 0.0, dur: 0.7, type: "move", who: "R2", to: [[16.9, 6.3]] },   // RBとゴールの間に寄せる（目線でPVが見えるように）
-            { t: 0.8, dur: 0.5, type: "pass", from: "RB", to: "PV" },
+            { t: 0.8, dur: 0.5, type: "pass", from: "RB", to: "PV", kind: "bounce" },   // 寄ってきた右2の横をバウンドで
             { t: 1.4, dur: 0.6, type: "shoot", who: "PV" },
           ] },
         { group: "RBの選択肢", label: "③1枚目寄せてサイド落とし", from: 2.0, text: "右1枚目をRBに寄せてから、空いたRWへサイド落とし。",

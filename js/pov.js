@@ -196,6 +196,17 @@
       // コートの線
       g.lineCap = "round"; g.lineJoin = "round";
       for (const L of LINES) for (let i = 1; i < L.pts.length; i++) this.line3([[...L.pts[i - 1], 0], [...L.pts[i], 0]], L.w, COL.line, L.dash);
+      // パスコース(床の帯)。緑=空いている / 赤=DFがコース上
+      for (const ln of st.lanes) {
+        const a = st.pos[ln.from], b = st.pos[ln.to], dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1;
+        const nx = (-dy / L) * (E.LANE_W / 2), ny = (dx / L) * (E.LANE_W / 2);
+        const band = this.clipPoly([[a.x + nx, a.y + ny], [b.x + nx, b.y + ny], [b.x - nx, b.y - ny], [a.x - nx, a.y - ny]].map(([x, y]) => this.toCam(x, y, 0)));
+        if (band.length >= 3) {
+          g.beginPath(); band.forEach((q, i) => (i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y))); g.closePath();
+          g.fillStyle = ln.ok ? "rgba(10,157,108,.35)" : "rgba(214,69,69,.35)"; g.fill();
+          g.lineWidth = 2; g.strokeStyle = ln.ok ? "#0a9d6c" : "#d64545"; g.stroke();
+        }
+      }
       // ゴール
       for (const s of GOAL_NET) this.line3(s, 1, "#9aa3ad");
       for (const s of GOAL_FRAME) this.line3(s, 5, "#d64545");
@@ -218,8 +229,12 @@
       for (const s of sprites) this.sprite(s, t);
       // 飛んでいるボール
       if (st.ballPos && !(st.holder === this.pos)) {
-        const bp = this.proj(this.toCam(st.ballPos.x, st.ballPos.y, 1.2));
-        if (bp) this.ball(bp.x, bp.y, clamp((this.F * 0.13) / bp.d, 3, 40));
+        const bp = this.proj(this.toCam(st.ballPos.x, st.ballPos.y, st.ballZ == null ? 1.2 : st.ballZ));
+        if (bp) {
+          this.ball(bp.x, bp.y, clamp((this.F * 0.13) / bp.d, 3, 40));
+          const sh = this.proj(this.toCam(st.ballPos.x, st.ballPos.y, 0));          // 床の影(高さが分かる)
+          if (sh && st.ballZ > 0.15) { g.beginPath(); g.ellipse(sh.x, sh.y, clamp((this.F * 0.12) / sh.d, 2, 30), clamp((this.F * 0.05) / sh.d, 1, 12), 0, 0, Math.PI * 2); g.fillStyle = "rgba(0,0,0,.22)"; g.fill(); }
+        }
       }
       // 視野外のチップ
       const slots = { L: 0, R: 0 };
