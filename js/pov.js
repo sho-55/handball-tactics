@@ -3,7 +3,7 @@
 (function () {
   const E = window.TacticEngine;
   const GOAL = E.GOAL, CW = E.CW;
-  const EYE = 1.6, HEAD = 1.75, HFOV = (110 * Math.PI) / 180, NEAR = 0.3, HORIZON = 0.42;
+  const EYE = 1.6, HEAD = 1.75, HFOV = (120 * Math.PI) / 180, MARGIN = (6 * Math.PI) / 180, NEAR = 0.3, HORIZON = 0.42;
   const COL = { of: "#3b8ee8", ofEdge: "#1b4f8f", df: "#ef8a3c", dfEdge: "#9a4a12", ball: "#ffd23f", ballEdge: "#7a5a00", floor: "#f2f1ea", area: "#e3e9f3", wall: "#d5dde8", line: "#2f2f2f" };
   const SMOOTH = 0.5, SAMPLES = 6;           // 顔の向き: 直近 0.5 秒を 6 点で平均
   const svgNS = "http://www.w3.org/2000/svg";
@@ -81,8 +81,24 @@
       } else if (Array.isArray(face)) tg = { x: face[0], y: face[1] };
       else if (face && st.pos[face]) tg = st.pos[face];
       if (!tg) { if (st.holder === this.pos) tg = GOAL; else if (st.ballPos) tg = st.ballPos; else if (st.holder) tg = st.pos[st.holder]; else tg = GOAL; }
-      const v = norm({ x: this.mx(tg.x) - this.mx(me.x), y: tg.y - me.y });
-      return v || norm({ x: this.mx(GOAL.x) - this.mx(me.x), y: GOAL.y - me.y }) || { x: 0, y: -1 };
+      const v = norm({ x: this.mx(tg.x) - this.mx(me.x), y: tg.y - me.y }) || norm({ x: this.mx(GOAL.x) - this.mx(me.x), y: GOAL.y - me.y }) || { x: 0, y: -1 };
+      // 制約: ボール(自分が持っていない時)とゴールは常に視野に入れる。希望の向きをその範囲に丸める
+      const ang = (q) => Math.atan2(q.y - me.y, this.mx(q.x) - this.mx(me.x));
+      const anchors = [ang(GOAL)];
+      const ballAt = st.ballPos || (st.holder && st.holder !== this.pos ? st.pos[st.holder] : null);
+      if (ballAt && Math.hypot(ballAt.x - me.x, ballAt.y - me.y) > 0.3) anchors.push(ang(ballAt));
+      const half = HFOV / 2 - MARGIN, wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+      let want = Math.atan2(v.y, v.x), lo, hi;
+      if (anchors.length === 1) { lo = anchors[0] - half; hi = anchors[0] + half; }
+      else {
+        const d = wrap(anchors[1] - anchors[0]);                 // ゴール→ボールの角度差
+        const bis = anchors[0] + d / 2, span = Math.abs(d);
+        if (span >= 2 * half) { want = bis; lo = hi = bis; }     // 両方入らない → 真ん中を向く(両端に見える)
+        else { lo = bis + span / 2 - half; hi = bis - span / 2 + half; }
+      }
+      const rel = wrap(want - (lo + hi) / 2), width = wrap(hi - lo) / 2;
+      const a = (lo + hi) / 2 + Math.max(-width, Math.min(width, rel));
+      return { x: Math.cos(a), y: Math.sin(a) };
     }
     // なめらかな向き: t の純関数(直近 SMOOTH 秒の目標を新しいほど重く平均。t<0 は直前の文脈を参照)
     forwardAt(t) {
