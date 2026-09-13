@@ -5,7 +5,7 @@
   const entry = (window.TACTIC_LIST || []).find((t) => t.id === id);
   if (!entry) { document.body.innerHTML = "<p style='padding:20px'>セットが見つかりません。</p>"; return; }
   const s = document.createElement("script");
-  s.src = "tactics/" + entry.file + "?v=202609132158";
+  s.src = "tactics/" + entry.file + "?v=202609132206";
   s.onload = () => init(window.TACTICS[id]);
   document.head.appendChild(s);
 
@@ -90,7 +90,10 @@
         }
       }
       $("#prev").disabled = i === 0 && !player.branch;
-      $("#next").textContent = i === data.steps.length - 1 ? "最初へ" : "次へ ▶";
+      // 判断で止まっている間の「次へ」は、同じステップの続き（ボールをもらう動きまで）を再生する
+      const stopped = !!(window.pov && window.pov.stopped);
+      $("#next").textContent = stopped ? "続き ▶" : i === data.steps.length - 1 ? "最初へ" : "次へ ▶";
+      $("#next").classList.toggle("resume", stopped);
       $("#auto").classList.toggle("on", player.auto);
       $("#auto").textContent = player.auto ? "■ 停止" : "▶ 自動再生";
       $("#speed").textContent = "速さ " + player.speed + "x";
@@ -99,7 +102,10 @@
     renderPanel();
 
     $("#prev").onclick = () => { player.auto = false; if (player.branch) player.backToMain(); else player.gotoStep(player.stepIndex - 1); };
-    $("#next").onclick = () => { player.auto = false; player.gotoStep(player.stepIndex === data.steps.length - 1 ? 0 : player.stepIndex + 1); };
+    $("#next").onclick = () => {
+      if (window.pov && window.pov.stopped) { window.pov.resume(); return; }     // 停止中は続きを再生
+      player.auto = false; player.gotoStep(player.stepIndex === data.steps.length - 1 ? 0 : player.stepIndex + 1);
+    };
     $("#replay").onclick = () => player.restart(true);
     // 最初から: ステップ1の頭に戻して再生（自動再生中ならそのまま続く）
     $("#restartBtn").onclick = () => { player.gotoStep(0, true); window.scrollTo({ top: 0, behavior: "smooth" }); };

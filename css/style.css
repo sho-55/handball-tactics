@@ -109,3 +109,4 @@ canvas#pov { width: 100%; display: block; border-radius: 8px; background: #d5dde
 .stopbox .big { font-size: 17px; font-weight: 800; }
 .stopbox .small { font-size: 12px; opacity: .95; margin-top: 2px; }
 @media (min-width: 760px) { .pov-wrap { position: sticky; top: 0; align-self: start; } }
+.controls .primary.resume { background: var(--accent); }

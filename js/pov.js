@@ -152,8 +152,9 @@
       const who = [].concat(c.look || []).map((id) => this.label(id)).join("・");
       this.stopBox.innerHTML = `<div class="big">${who ? who + "を見る" : "ここで判断"}</div><div class="small">${this.p.auto ? "自動で続きます" : "タップで続き ▶"}</div>`;
       this.stopBox.hidden = false;
+      this.p.onChange();                                   // 「次へ」ボタンを「続き」に変える
     }
-    clearStop() { clearTimeout(this.stopTimer); this.stopped = null; this.stopBox.hidden = true; }
+    clearStop() { clearTimeout(this.stopTimer); const was = this.stopped; this.stopped = null; this.stopBox.hidden = true; if (was) this.p.onChange(); }
     resume() { if (!this.stopped) return; this.clearStop(); this.p.play(); }
     label(id) { const q = this.p.data.players[id]; return q ? (q.team === "of" ? id : q.label || id) : id; }
 
