@@ -25,6 +25,17 @@ window.TACTICS["06"] = {
     // ---------------------------------------------------------------- (1)
     {
       title: "LBからLWで始動",
+      pov: {
+        RB: { cues: [
+          { t: 0.0, look: "LB", say: "LBからLWへ。反対側で始まるので、今は待つ", est: true },
+          { t: 0.8, look: "LB", say: "CBがLBの後ろを回り込んで左45へ。こちら側はまだ動かない", est: true },
+        ] },
+        LB: { cues: [
+          { t: 0.0, face: "LW", look: "LW", say: "LWへパスして始動" },
+          { t: 0.4, say: "センター（コート縦中央）へ移動", est: true },
+          { t: 1.9, look: "L3", say: "コート縦中央で待つ。左3枚目の足元を見ておく", est: true },
+        ] },
+      },
       text: "LBがLWにパス。LBはセンターへ移動。CBはLBの後ろを回り込んで（回り込み）、左45の位置でロングの準備をする。",
       notes: [
         "ユーゴ（5番）を縦半面で行う。ユーゴとは狙いが違う。",
@@ -50,6 +61,17 @@ window.TACTICS["06"] = {
     // ---------------------------------------------------------------- (2)
     {
       title: "LWからCBへ。CBが1対1、PVは左2枚目裏へスライド",
+      pov: {
+        RB: { cues: [
+          { t: 0.0, look: "CB", say: "CBが左2枚目と1対1。左側にDFが寄っていくのを見る" },
+          { t: 1.9, look: ["LB", "PV"], say: "CBからLBへ。PVが左2枚目の裏へスライド。次はLBから自分に来る準備", est: true },
+        ] },
+        LB: { cues: [
+          { t: 0.0, look: "CB", say: "CBが左2枚目と1対1。コート縦中央で待つ。けん制が来たらニアへ" },
+          { t: 1.7, look: ["L2", "L3"], say: "CBから自分にパスが来る。左3枚目の足が6mにあるか見ておく（あれば無理せず逆展開）", stop: true },
+          { t: 2.6, look: "PV", say: "PVは左2枚目の裏へスライド。次はケンケンで前を狙う" },
+        ] },
+      },
       text: "LWからCBへパス。CBは9mアークの真ん中（サイドライン〜ゴールポスト間の中央）で左2枚目と1対1。CBからLBへパスすると同時に、PVは左2枚目の裏へスライドする。",
       notes: [
         "PVはスライド後、ターン準備。",
@@ -146,6 +168,20 @@ window.TACTICS["06"] = {
     // ---------------------------------------------------------------- (3)
     {
       title: "LBはケンケンで前を狙う。PVは右3枚目裏へ再スライド",
+      pov: {
+        RB: { cues: [
+          { t: 0.0, look: ["LB", "R3"], say: "LBがケンケンで前を狙う。右3枚目がけん制に出るかを見る" },
+          { t: 0.6, face: ["R2", "R1"], look: ["R3", "PV"], say: "右3枚目が出た → ワイドに開く。PVが右3枚目の裏へ再スライド" },
+          { t: 1.7, face: ["R2", "R1"], look: ["R2", "R1"], say: "パスが来る前に、右2枚目・右1枚目の位置を見ておく", est: true, stop: true },
+          { t: 2.7, face: ["PV", "RW"], look: ["PV", "RW"], say: "右側はPV・RB・RWで広い3対2" },
+        ] },
+        LB: { cues: [
+          { t: 0.0, look: "R3", say: "ケンケンで前を狙う。右3枚目がけん制に出るか見る" },
+          { t: 0.9, face: "R3", look: "R3", say: "右3枚目が出てきた → PVが裏へ再スライド" },
+          { t: 1.5, face: ["R3", "PV"], look: ["R3", "PV"], say: "右3枚目の裏にPVが入る。ロング／PV／RBへ、を選ぶ", stop: true },
+          { t: 1.9, face: "RB", look: "RB", say: "ワイドに開いたRBへパス" },
+        ] },
+      },
       text: "LBは「ケンケン」で前を狙いながらPVの再スライドを待つ。右3枚目がLBにけん制で出てきたら、PVはその裏へ再スライド。RBはワイドに開き、LBからRBへパス。",
       notes: [
         "スライド後、休まず再スライド（PVの粘り）。",
@@ -164,6 +200,11 @@ window.TACTICS["06"] = {
         {
           group: "LBの選択肢", label: "①ロング（右3が出ない）", from: 0.0,
           text: "右3枚目がけん制に出てこなければ、LBはケンケンからそのままロングシュート。",
+          pov: { LB: { cues: [
+            { t: 0.0, look: "R3", say: "右3枚目がけん制に出てこない" },
+            { t: 0.4, look: "R3", say: "出てこない → ケンケンからそのままロングシュート", stop: true },
+            { t: 1.0, say: "シュート" },
+          ] } },
           actions: [
             { t: 0.0, dur: 0.6, type: "move", who: "LB", to: [[10.6, 7.9]] },
             { t: 0.6, dur: 1.2, type: "move", who: "PV", to: [[11.9, 6.4]] },
@@ -173,6 +214,11 @@ window.TACTICS["06"] = {
         {
           group: "LBの選択肢", label: "②PVスライドパス", from: 0.0,
           text: "PVが右3枚目の裏に再スライド。右3枚目がLBに出てきて裏が空いたらPVへパス。PVがシュート。",
+          pov: { LB: { cues: [
+            { t: 0.0, face: ["R3", "PV"], look: "R3", say: "右3枚目が自分に出てきた" },
+            { t: 1.6, face: ["R3", "PV"], look: ["R3", "PV"], say: "右3枚目の裏が空いた → 再スライドしたPVへパス", stop: true },
+            { t: 2.6, look: "PV", say: "PVがシュート" },
+          ] } },
           actions: [
             { t: 0.0, dur: 0.6, type: "move", who: "LB", to: [[10.6, 7.9]] },
             { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[11.6, 7.4]] },
@@ -184,11 +230,16 @@ window.TACTICS["06"] = {
         {
           group: "LBの選択肢", label: "③右2-3割（＋RB並行）", from: 0.0,
           text: "LBが右2枚目と右3枚目の間を割って攻める。右2枚目が寄ってきたら、右1枚目との間に並行で走り込むRBへパス。",
+          pov: { LB: { cues: [
+            { t: 0.0, face: ["R2", "R3"], look: ["R2", "R3"], say: "右2枚目と右3枚目の間を割って攻める" },
+            { t: 1.0, face: ["R2", "RB"], look: ["R2", "RB"], say: "右2枚目が寄ってきた → 右1枚目との間に並行で走り込むRBへパス", stop: true },
+            { t: 1.9, look: "RB", say: "RBがシュート" },
+          ] } },
           actions: [
             { t: 0.0, dur: 1.0, type: "move", who: "LB", to: [[12.8, 7.3]] },
             { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[11.6, 7.4]] },
             { t: 0.4, dur: 0.7, type: "move", who: "R2", to: [[14.1, 6.2]] },
-            { t: 0.9, dur: 1.0, type: "move", who: "RB", to: [[15.8, 5.2]] },
+            { t: 0.4, dur: 1.0, type: "move", who: "RB", to: [[15.8, 5.2]] },   // 早めに走り出す（目線でRBが見えるように）
             { t: 1.2, dur: 0.6, type: "pass", from: "LB", to: "RB" },
             { t: 1.9, dur: 0.6, type: "shoot", who: "RB" },
           ],
@@ -196,6 +247,12 @@ window.TACTICS["06"] = {
         {
           group: "LBの選択肢", label: "④頭上パスフェイク→RB並行", from: 0.0,
           text: "右3枚目の頭の上を通すパスフェイクで右2枚目をRB側に寄せる。空いた右2枚目と右3枚目の間にRBが並行で走り込み、LBからパスしてシュート。",
+          pov: { LB: { cues: [
+            { t: 0.0, face: ["R3", "R2"], look: "R3", say: "右3枚目が出てきた" },
+            { t: 0.8, face: ["R3", "R2"], look: ["R3", "R2"], say: "右3枚目の頭の上を通すパスフェイクで、右2枚目をRB側に寄せる" },
+            { t: 1.7, face: ["R2", "RB"], look: ["R2", "RB"], say: "右2枚目が寄った → 空いた右2枚目と右3枚目の間にRBが並行で走り込む → パス", stop: true },
+            { t: 2.6, look: "RB", say: "RBがシュート" },
+          ] } },
           actions: [
             { t: 0.0, dur: 0.6, type: "move", who: "LB", to: [[10.6, 7.9]] },
             { t: 0.2, dur: 0.7, type: "move", who: "R3", to: [[11.6, 7.4]] },
@@ -211,6 +268,14 @@ window.TACTICS["06"] = {
     // ---------------------------------------------------------------- (4)
     {
       title: "反対側で広い3対2",
+      pov: {
+        RB: { cues: [
+          { t: 0.0, face: ["R2", "R1"], look: ["R2", "R1"], say: "右2枚目が寄るか、右1枚目が出るかを見て選ぶ（アウト割り／RW並行／PVポストパス）" },
+        ] },
+        LB: { cues: [
+          { t: 0.0, look: "RB", say: "RBまで渡ったら右側の3対2を見守る。LWとCBは戻ってDFの準備", est: true },
+        ] },
+      },
       text: "右側にDFが2枚しか残らず、PV・RB・RWの3人で広い3対2ができる。RBまでボールが渡ればLWとCBは戻ってDFの準備。",
       notes: [
         "RBまで渡ればLW/CBはDF。",
@@ -224,6 +289,11 @@ window.TACTICS["06"] = {
         {
           group: "RBの選択肢", label: "①アウト割り", from: 3.0,
           text: "右1枚目と右2枚目の間を外側に割ってシュート。",
+          pov: { RB: { cues: [
+            { t: 0.0, face: "GOAL", look: ["R1", "R2"], say: "右1枚目と右2枚目の間が空いている" },
+            { t: 0.3, face: "GOAL", look: ["R1", "R2"], say: "間を外側に割って走り込む", stop: true },
+            { t: 1.0, face: "GOAL", say: "シュート" },
+          ] } },
           actions: [
             { t: 0.0, dur: 1.0, type: "move", who: "RB", to: [[17.0, 4.8]] },
             { t: 1.0, dur: 0.6, type: "shoot", who: "RB" },
@@ -232,6 +302,11 @@ window.TACTICS["06"] = {
         {
           group: "RBの選択肢", label: "②RW並行", from: 3.0,
           text: "右1枚目がRBに出てきたら、RWが右1枚目の内側に並行で走り込む。RBからRWへパスしてシュート。",
+          pov: { RB: { cues: [
+            { t: 0.0, face: "GOAL", look: "R1", say: "右1枚目が自分に出てきた" },
+            { t: 0.7, face: "GOAL", look: ["R1", "RW"], say: "右1枚目が出た → 内側に並行で走り込むRWへパス", stop: true },
+            { t: 1.6, face: "GOAL", look: "RW", say: "RWがシュート" },
+          ] } },
           actions: [
             { t: 0.0, dur: 0.7, type: "move", who: "R1", to: [[17.2, 5.0]] },
             { t: 0.3, dur: 1.0, type: "move", who: "RW", to: [[16.3, 3.5]] },
@@ -242,8 +317,13 @@ window.TACTICS["06"] = {
         {
           group: "RBの選択肢", label: "③PVポストパス", from: 3.0,
           text: "右2枚目がRBに寄ってきたら、右3枚目の裏にいるPVへポストパス。PVがターンしてシュート。",
+          pov: { RB: { cues: [
+            { t: 0.0, face: "GOAL", look: "R2", say: "右2枚目が自分に寄ってくる" },
+            { t: 0.7, face: "GOAL", look: ["R2", "PV"], say: "右2枚目が寄った → 右3枚目の裏のPVへポストパス", stop: true },
+            { t: 1.7, face: "GOAL", look: "PV", say: "PVがターンしてシュート" },
+          ] } },
           actions: [
-            { t: 0.0, dur: 0.7, type: "move", who: "R2", to: [[16.4, 6.6]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "R2", to: [[16.6, 6.4]] },   // RBとゴールの間に寄せる（目線でPVが見えるように）
             { t: 0.2, dur: 0.8, type: "move", who: "PV", to: [[13.4, 6.0]] },
             { t: 1.0, dur: 0.6, type: "pass", from: "RB", to: "PV" },
             { t: 1.7, dur: 0.6, type: "shoot", who: "PV" },
