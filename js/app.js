@@ -5,7 +5,7 @@
   const entry = (window.TACTIC_LIST || []).find((t) => t.id === id);
   if (!entry) { document.body.innerHTML = "<p style='padding:20px'>セットが見つかりません。</p>"; return; }
   const s = document.createElement("script");
-  s.src = "tactics/" + entry.file + "?v=202609132218";
+  s.src = "tactics/" + entry.file + "?v=202609132231";
   s.onload = () => init(window.TACTICS[id]);
   document.head.appendChild(s);
 
@@ -39,16 +39,22 @@
       let saved = false; try { saved = localStorage.getItem("mirror") === "1"; } catch (e) {}
       if (params.get("mirror") === "1" || (params.get("mirror") == null && saved)) { mirrored = true; player.setMirror(true); }
       mirrorBtn.onclick = () => {
-        mirrored = !mirrored; player.setMirror(mirrored);
+        mirrored = !mirrored; player.setMirror(mirrored); syncViewer();
         try { localStorage.setItem("mirror", mirrored ? "1" : "0"); } catch (e) {}
         const u = new URL(location.href); if (mirrored) u.searchParams.set("mirror", "1"); else u.searchParams.delete("mirror");
         history.replaceState(null, "", u);
       };
     }
-    // 目線ビュー（pov.html）
+    // 目線ビュー（pov.html）。反転時は「反転後にその位置に来る選手」＝データ上は反対側のID（RB→LB）を視点にする
+    const viewerId = () => (mirrored ? window.TacticEngine.MIRROR_ID[POS] || POS : POS);
+    function syncViewer() {
+      if (!window.pov) return;
+      window.pov.setViewer(viewerId());
+      if (player.branch && !(player.branch.pov && player.branch.pov[viewerId()])) player.backToMain();
+    }
     if (POV) {
-      window.pov = new window.PovView(player, { pos: POS, canvas: $("#pov"), minimap: $("#court"), callout: $("#callout"), stopBox: $("#stopBox"), format: markTerms });
-      const back = $("#topLink"); if (back) back.href = "tactic.html?id=" + id;
+      window.pov = new window.PovView(player, { pos: viewerId(), canvas: $("#pov"), minimap: $("#court"), callout: $("#callout"), stopBox: $("#stopBox"), format: markTerms });
+      const back = $("#topLink"); if (back) back.href = "tactic.html?id=" + id + (mirrored ? "&mirror=1" : "");
     }
     // 上から図のページ → 目線ページへのリンク（index.js で pov を持つセットだけ）
     const povLink = $("#povLink");
@@ -63,6 +69,7 @@
       $("#mode").textContent = (player.branch ? "分岐: " + (mirrored ? swapText(player.branch.label) : player.branch.label) : "本線");
       if (mirrorBtn) { mirrorBtn.classList.toggle("on", mirrored); mirrorBtn.textContent = mirrored ? "⇄ 右から始動" : "⇄ 左右反転"; }
       $("#purpose").textContent = "ねらい: " + (mirrored ? swapText(data.purpose) : data.purpose) + (mirrored ? "　※左右を入れ替えたパターン" : "");
+      if (POV) $("#title").textContent = data.title + `　${POS}目線` + (mirrored ? "（左右反転）" : "");
       $("#stepTitle").innerHTML = `(${i + 1}) ` + markTerms(step.title);
       $("#stepText").innerHTML = markTerms(step.text);
       const bt = $("#branchText");
@@ -76,7 +83,7 @@
       const box = $("#branches"); box.innerHTML = "";
       const groups = {};
       // 目線ページでは、その目線の視線データ(pov)がある分岐だけ出す
-      (step.branches || []).filter((b) => !POV || (b.pov && b.pov[POS])).forEach((b) => { (groups[b.group] = groups[b.group] || []).push(b); });
+      (step.branches || []).filter((b) => !POV || (b.pov && b.pov[viewerId()])).forEach((b) => { (groups[b.group] = groups[b.group] || []).push(b); });
       if (Object.keys(groups).length) {
         const mainChip = document.createElement("button"); mainChip.className = "chip main" + (player.branch ? "" : " on"); mainChip.textContent = "本線の動き";
         mainChip.onclick = () => player.backToMain();

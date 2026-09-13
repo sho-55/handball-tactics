@@ -46,6 +46,8 @@
       player.onRender = (st, t) => this.onRender(st, t);
       this.redraw();
     }
+    // 視点の選手(データ上のID)を切り替える。反転時は反対側の役(RB↔LB)になる
+    setViewer(id) { if (id === this.pos) return; this.pos = id; this.passed.clear(); this.clearStop(); this.lastT = -1; this.redraw(); }
     resize() {
       const dpr = window.devicePixelRatio || 1;
       const W = this.canvas.clientWidth || 360, H = Math.round(W * 0.66);
@@ -79,8 +81,8 @@
       } else if (Array.isArray(face)) tg = { x: face[0], y: face[1] };
       else if (face && st.pos[face]) tg = st.pos[face];
       if (!tg) { if (st.holder === this.pos) tg = GOAL; else if (st.ballPos) tg = st.ballPos; else if (st.holder) tg = st.pos[st.holder]; else tg = GOAL; }
-      const v = norm({ x: tg.x - me.x, y: tg.y - me.y });
-      return v || norm({ x: GOAL.x - me.x, y: GOAL.y - me.y }) || { x: 0, y: -1 };
+      const v = norm({ x: this.mx(tg.x) - this.mx(me.x), y: tg.y - me.y });
+      return v || norm({ x: this.mx(GOAL.x) - this.mx(me.x), y: GOAL.y - me.y }) || { x: 0, y: -1 };
     }
     // なめらかな向き: t の純関数(直近 SMOOTH 秒の目標を新しいほど重く平均。t<0 は直前の文脈を参照)
     forwardAt(t) {
@@ -98,11 +100,13 @@
     }
 
     // ---------------------------------------------------------------- 投影
+    // 左右反転: 世界座標の x を 20-x にしてから計算する(Player.X と同じ向き)
+    mx(x) { return this.p.mirror ? CW - x : x; }
     setCamera(st, t) {
       const me = st.pos[this.pos], fw = this.forwardAt(t);
-      this.cam = { x: me.x, y: me.y, fw, rt: { x: -fw.y, y: fw.x } };
+      this.cam = { x: this.mx(me.x), y: me.y, fw, rt: { x: -fw.y, y: fw.x } };
     }
-    toCam(x, y, z) { const c = this.cam, rx = x - c.x, ry = y - c.y; return { d: rx * c.fw.x + ry * c.fw.y, l: rx * c.rt.x + ry * c.rt.y, z: z || 0 }; }
+    toCam(x, y, z) { const c = this.cam, rx = this.mx(x) - c.x, ry = y - c.y; return { d: rx * c.fw.x + ry * c.fw.y, l: rx * c.rt.x + ry * c.rt.y, z: z || 0 }; }
     proj(cp) { if (cp.d < NEAR - 1e-6) return null; return { x: this.W / 2 + (this.F * cp.l) / cp.d, y: HORIZON * this.H + (this.F * (EYE - cp.z)) / cp.d, d: cp.d }; }
     project(id) { const st = E.stateAt(this.p.seq.start, this.p.seq.actions, this.p.t); const q = st.pos[id]; return q ? this.proj(this.toCam(q.x, q.y, 0)) : null; }
     clipSeg(a, b) {   // 近平面 d=NEAR で切る
@@ -156,7 +160,11 @@
     }
     clearStop() { clearTimeout(this.stopTimer); const was = this.stopped; this.stopped = null; this.stopBox.hidden = true; if (was) this.p.onChange(); }
     resume() { if (!this.stopped) return; this.clearStop(); this.p.play(); }
-    label(id) { const q = this.p.data.players[id]; return q ? (q.team === "of" ? id : q.label || id) : id; }
+    label(id) {
+      const q = this.p.data.players[id]; if (!q) return id;
+      if (this.p.mirror) return q.team === "of" ? (E.MIRROR_ID[id] || id) : E.mirrorLabel(q.label || id);
+      return q.team === "of" ? id : q.label || id;
+    }
 
     draw(st, t) {
       this.setCamera(st, t);
