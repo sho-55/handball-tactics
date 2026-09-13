@@ -3,7 +3,7 @@
 (function () {
   const E = window.TacticEngine;
   const GOAL = E.GOAL, CW = E.CW;
-  const EYE = 1.6, HEAD = 1.75, HFOV = (100 * Math.PI) / 180, NEAR = 0.3, HORIZON = 0.42;
+  const EYE = 1.6, HEAD = 1.75, HFOV = (110 * Math.PI) / 180, NEAR = 0.3, HORIZON = 0.42;
   const COL = { of: "#3b8ee8", ofEdge: "#1b4f8f", df: "#ef8a3c", dfEdge: "#9a4a12", ball: "#ffd23f", ballEdge: "#7a5a00", floor: "#f2f1ea", area: "#e3e9f3", wall: "#d5dde8", line: "#2f2f2f" };
   const SMOOTH = 0.5, SAMPLES = 6;           // 顔の向き: 直近 0.5 秒を 6 点で平均
   const svgNS = "http://www.w3.org/2000/svg";
