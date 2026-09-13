@@ -3,20 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ハンド動き解説</title>
+<title>ハンド動き解説（目線）</title>
 <link rel="stylesheet" href="css/style.css?v=202609132149">
 </head>
 <body>
 <header class="top">
   <a class="back" href="./">◀ 一覧</a>
   <h1 id="title">読み込み中…</h1>
-  <a class="btn" id="povLink" hidden>目線</a>
   <button class="btn" id="legendBtn">見かた</button>
 </header>
 <div class="purpose" id="purpose"></div>
-<div class="toolbar"><button class="btn-restart" id="restartBtn">⏮ 最初から</button><button class="btn-mirror" id="mirrorBtn">⇄ 左右反転</button><span class="hint">反転＝右から行う</span></div>
+<div class="toolbar"><button class="btn-restart" id="restartBtn">⏮ 最初から</button><a class="btn-top" id="topLink" href="./">▦ 上から図で見る</a><span class="hint">試作版</span></div>
 <div class="app">
-  <div class="court-wrap"><svg id="court" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div class="pov-wrap">
+    <div class="pov-stage">
+      <canvas id="pov"></canvas>
+      <div class="minimap"><svg id="court" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      <div class="callout" id="callout" hidden></div>
+      <div class="stopbox" id="stopBox" hidden></div>
+    </div>
+  </div>
   <div class="panel">
     <div class="stepbar"><div class="dots" id="dots"></div><div class="mode" id="mode"></div></div>
     <h2 class="step-title" id="stepTitle"></h2>
@@ -37,6 +43,7 @@
 <script src="tactics/index.js?v=202609132149"></script>
 <script src="js/glossary.js?v=202609132149"></script>
 <script src="js/engine.js?v=202609132149"></script>
+<script src="js/pov.js?v=202609132149"></script>
 <script src="js/app.js?v=202609132149"></script>
 </body>
 </html>

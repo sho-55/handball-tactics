@@ -5,11 +5,13 @@
   const entry = (window.TACTIC_LIST || []).find((t) => t.id === id);
   if (!entry) { document.body.innerHTML = "<p style='padding:20px'>セットが見つかりません。</p>"; return; }
   const s = document.createElement("script");
-  s.src = "tactics/" + entry.file + "?v=202609051509";
+  s.src = "tactics/" + entry.file + "?v=202609132149";
   s.onload = () => init(window.TACTICS[id]);
   document.head.appendChild(s);
 
   const $ = (sel) => document.querySelector(sel);
+  const POV = !!document.getElementById("pov");            // 目線ページかどうか
+  const POS = params.get("pos") || "RB";                    // 目線にする選手
   const termRe = () => {
     const keys = Object.keys(window.GLOSSARY).sort((a, b) => b.length - a.length).map((k) => k.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&"));
     return new RegExp("(" + keys.join("|") + ")", "g");
@@ -26,20 +28,31 @@
   }
 
   function init(data) {
-    document.title = data.title + " | ハンド動き解説";
-    $("#title").textContent = data.title;
+    document.title = data.title + (POV ? `（${POS}目線）` : "") + " | ハンド動き解説";
+    $("#title").textContent = data.title + (POV ? `　${POS}目線` : "");
     $("#purpose").textContent = "ねらい: " + data.purpose;
     const player = new window.TacticEngine.Player(data, $("#court"));
     window.player = player;
-    // 左右反転（URL ?mirror=1 か前回の設定を復元）
-    let saved = false; try { saved = localStorage.getItem("mirror") === "1"; } catch (e) {}
-    if (params.get("mirror") === "1" || (params.get("mirror") == null && saved)) { mirrored = true; player.setMirror(true); }
-    $("#mirrorBtn").onclick = () => {
-      mirrored = !mirrored; player.setMirror(mirrored);
-      try { localStorage.setItem("mirror", mirrored ? "1" : "0"); } catch (e) {}
-      const u = new URL(location.href); if (mirrored) u.searchParams.set("mirror", "1"); else u.searchParams.delete("mirror");
-      history.replaceState(null, "", u);
-    };
+    // 左右反転（URL ?mirror=1 か前回の設定を復元）。反転ボタンの無いページ（目線ページ）では復元もしない
+    const mirrorBtn = $("#mirrorBtn");
+    if (mirrorBtn) {
+      let saved = false; try { saved = localStorage.getItem("mirror") === "1"; } catch (e) {}
+      if (params.get("mirror") === "1" || (params.get("mirror") == null && saved)) { mirrored = true; player.setMirror(true); }
+      mirrorBtn.onclick = () => {
+        mirrored = !mirrored; player.setMirror(mirrored);
+        try { localStorage.setItem("mirror", mirrored ? "1" : "0"); } catch (e) {}
+        const u = new URL(location.href); if (mirrored) u.searchParams.set("mirror", "1"); else u.searchParams.delete("mirror");
+        history.replaceState(null, "", u);
+      };
+    }
+    // 目線ビュー（pov.html）
+    if (POV) {
+      window.pov = new window.PovView(player, { pos: POS, canvas: $("#pov"), minimap: $("#court"), callout: $("#callout"), stopBox: $("#stopBox"), format: markTerms });
+      const back = $("#topLink"); if (back) back.href = "tactic.html?id=" + id;
+    }
+    // 上から図のページ → 目線ページへのリンク（index.js で pov を持つセットだけ）
+    const povLink = $("#povLink");
+    if (povLink && entry.pov && entry.pov.length) { povLink.hidden = false; povLink.href = `pov.html?id=${id}&pos=${entry.pov[0]}`; povLink.textContent = `${entry.pov[0]}目線（試作）`; }
 
     const dots = $("#dots");
     data.steps.forEach((st, i) => { const d = document.createElement("div"); d.className = "dot"; d.textContent = i + 1; d.onclick = () => player.gotoStep(i); dots.appendChild(d); });
@@ -48,8 +61,7 @@
       const i = player.stepIndex, step = player.step;
       [...dots.children].forEach((d, k) => { d.className = "dot" + (k === i ? " on" : k < i ? " done" : ""); });
       $("#mode").textContent = (player.branch ? "分岐: " + (mirrored ? swapText(player.branch.label) : player.branch.label) : "本線");
-      $("#mirrorBtn").classList.toggle("on", mirrored);
-      $("#mirrorBtn").textContent = mirrored ? "⇄ 右から始動" : "⇄ 左右反転";
+      if (mirrorBtn) { mirrorBtn.classList.toggle("on", mirrored); mirrorBtn.textContent = mirrored ? "⇄ 右から始動" : "⇄ 左右反転"; }
       $("#purpose").textContent = "ねらい: " + (mirrored ? swapText(data.purpose) : data.purpose) + (mirrored ? "　※左右を入れ替えたパターン" : "");
       $("#stepTitle").innerHTML = `(${i + 1}) ` + markTerms(step.title);
       $("#stepText").innerHTML = markTerms(step.text);
@@ -63,7 +75,8 @@
       // branches
       const box = $("#branches"); box.innerHTML = "";
       const groups = {};
-      (step.branches || []).forEach((b) => { (groups[b.group] = groups[b.group] || []).push(b); });
+      // 目線ページでは、その目線の視線データ(pov)がある分岐だけ出す
+      (step.branches || []).filter((b) => !POV || (b.pov && b.pov[POS])).forEach((b) => { (groups[b.group] = groups[b.group] || []).push(b); });
       if (Object.keys(groups).length) {
         const mainChip = document.createElement("button"); mainChip.className = "chip main" + (player.branch ? "" : " on"); mainChip.textContent = "本線の動き";
         mainChip.onclick = () => player.backToMain();
@@ -122,6 +135,12 @@
       <div><span class="k" style="background:none;border:3px dashed #0a9d6c"></span>ポイントの位置</div>
       <div><span class="k" style="background:rgba(255,196,0,.2);border:3px solid #f2a900;border-radius:6px"></span>3対2のエリア</div>
     </div>
+    ${POV ? `<div style="margin-top:10px;font-size:13.5px;line-height:1.7"><b>目線ビューの見かた</b><br>
+      画面は自分（${POS}）の目の高さから見た景色。近い人は大きく、遠い人は小さく見える。<br>
+      <span class="k" style="background:none;border:3px dashed #ffd23f"></span>黄色の点線＋「見る」＝今見る相手。左右の端の「◀ LB」は視野の外にいる人。<br>
+      右上の小さな図が上から見た位置と視野（黄色の扇）。<br>
+      赤い「〇〇を見る」で一度止まる＝判断の場面。タップで続き（自動再生中は自動で続く）。<br>
+      <span class="est" style="background:#ffd23f;color:#5a3d00;border-radius:4px;font-size:11px;padding:0 4px">仮</span>が付いた助言は、シートに書いていない推定（指導者確認中）。</div>` : ""}
     <p style="margin-top:10px">LW=左サイド / LB=左45 / CB=センター / PV=ポスト / RB=右45 / RW=右サイド<br>
     DFの番号は、攻める側から見てサイドライン側から「1枚目・2枚目・3枚目」。<br>
     <span style="color:#1b5fb3;border-bottom:2px dotted #3b8ee8">青い点線の言葉</span>はタップすると意味が出ます。</p>`;

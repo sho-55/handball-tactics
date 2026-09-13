@@ -104,7 +104,7 @@
   // ---------------------------------------------------------------- Court
   function drawCourt(svg) {
     svg.setAttribute("viewBox", `0 -40 ${CW * M} ${CH * M + 40}`);
-    const g = el("g", { id: "court" }, svg);
+    const g = el("g", { id: "courtBase" }, svg);   // 親の svg#court と ID を重ねない
     el("rect", { x: 0, y: -40, width: CW * M, height: CH * M + 40, fill: "#fff" }, g);
     el("rect", { x: 0, y: 0, width: CW * M, height: CH * M, fill: "#f9f9f6", stroke: "#333", "stroke-width": 3 }, g);
     // 6m ゴールエリア
@@ -145,6 +145,7 @@
       this.reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       this.branch = null; this.t = 0; this.playing = false; this.lastTs = 0;
       this.onChange = () => {};
+      this.onRender = () => {};                             // 描画後フック(目線ビューなどが同じ状態を受け取る)
       drawCourt(hostEl);
       this.layers = { zones: hostEl.querySelector("#zones"), paths: hostEl.querySelector("#paths"), guides: hostEl.querySelector("#guides"),
         players: hostEl.querySelector("#players"), ball: hostEl.querySelector("#ball") };
@@ -301,8 +302,9 @@
       if (st.shotDone) {
         el("text", { x: px(GOAL.x), y: -50 + 42, "text-anchor": "middle", "font-size": 26, "font-weight": 700, fill: "#d64545" }, zl).textContent = "シュート！";
       }
+      this.onRender(st, this.t);
     }
   }
 
-  window.TacticEngine = { Player, stateAt, duration, MIRROR_ID, mirrorLabel };
+  window.TacticEngine = { Player, stateAt, duration, MIRROR_ID, mirrorLabel, drawCourt, GOAL, CW, CH, M };
 })();
