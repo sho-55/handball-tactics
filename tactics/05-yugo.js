@@ -158,6 +158,11 @@ window.TACTICS["05"] = {
       ],
       branches: [
         { group: "RBの選択肢", label: "①アウト割り", from: 2.0, text: "右1枚目と右2枚目の間を外側に割ってシュート。",
+          pov: { RB: { cues: [
+            { t: 0.0, face: "GOAL", look: ["R1", "R2"], say: "右2枚目は寄ってこない。右1枚目と右2枚目の間を見る" },
+            { t: 0.3, face: "GOAL", look: ["R1", "R2"], say: "右1枚目と右2枚目の間が空いている → 外側に割って走り込む", stop: true },
+            { t: 1.0, face: "GOAL", say: "シュート" },
+          ] } },
           actions: [{ t: 0.0, dur: 1.0, type: "move", who: "RB", to: [[17.4, 4.8]] }, { t: 1.0, dur: 0.6, type: "shoot", who: "RB" }] },
         { group: "RBの選択肢", label: "②PVパス", from: 2.0, text: "右2枚目がRBに寄ってきたら、加勢に来たPVへポストパス。",
           pov: { RB: { cues: [
@@ -172,6 +177,13 @@ window.TACTICS["05"] = {
             { t: 1.4, dur: 0.6, type: "shoot", who: "PV" },
           ] },
         { group: "RBの選択肢", label: "③1枚目寄せてサイド落とし", from: 2.0, text: "右1枚目をRBに寄せてから、空いたRWへサイド落とし。",
+          pov: { RB: { cues: [
+            // 顔はゴール右寄りの一点(15.5,1.3)に固定。左手前の右1枚目と、右のRWを1つの視界で見る
+            { t: 0.0, face: [15.5, 1.3], look: "R1", say: "右1枚目に向かって攻めて、自分に寄せる" },
+            { t: 0.8, face: [15.5, 1.3], look: ["R1", "RW"], say: "右1枚目が寄ってきた → 空いたRWへサイド落とし", stop: true },
+            { t: 0.9, face: [15.5, 1.3], look: "RW" },
+            { t: 1.8, face: [15.5, 1.3], look: "RW", say: "RWがシュート" },
+          ] } },
           actions: [
             { t: 0.0, dur: 0.8, type: "move", who: "RB", to: [[18.0, 5.6]] },
             { t: 0.2, dur: 0.7, type: "move", who: "R1", to: [[16.9, 5.2]] },
