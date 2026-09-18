@@ -174,20 +174,21 @@ export function makeBall(parent){
 export function makeAthlete(scene,id,def,index){
   const root=new T.Group();scene.add(root);const body=new T.Group();root.add(body);
   contactShadow(root,.65,.47);
+  const upper=new T.Group();body.add(upper);
   const skin=[0xd7a27c,0xe1b18a,0xb77f5f,0xeac19a][index%4],shirt=def?0xe57938:0x287ac6,shorts=def?0x3f3531:0x153a60;
-  const torso=mesh(body,geo('jersey',()=>new T.LatheGeometry([new T.Vector2(.19,0),new T.Vector2(.2,.1),new T.Vector2(.23,.32),new T.Vector2(.255,.43),new T.Vector2(.18,.49)],20)),fabricMaterial(shirt),0,.925,0);torso.scale.z=.66;
-  const collar=mesh(body,new T.TorusGeometry(.083,.012,6,20),material(0xf0efe6),0,1.43,0);collar.rotation.x=Math.PI/2;
-  cylinder(body,.07,.085,.12,skin,0,1.46,0);
-  const head=sphere(body,.121,skin,0,1.64,0);head.scale.multiply(new T.Vector3(.88,1.12,.92));
-  const hair=sphere(body,.123,0x302820,0,1.70,-.012);hair.scale.multiply(new T.Vector3(.9,.65,.93));
-  for(const x of [-.04,.04])sphere(body,.008,0x30352d,x,1.65,.104);
-  sphere(body,.017,skin,0,1.615,.112);
-  for(const x of [-.111,.111]){const ear=sphere(body,.028,skin,x,1.63,0);ear.scale.multiply(new T.Vector3(.45,1,.7));}
-  const mouth=box(body,.042,.006,.005,0x8c5849,0,1.587,.107);
+  const torso=mesh(upper,geo('jersey',()=>new T.LatheGeometry([new T.Vector2(.19,0),new T.Vector2(.2,.1),new T.Vector2(.23,.32),new T.Vector2(.255,.43),new T.Vector2(.18,.49)],20)),fabricMaterial(shirt),0,.925,0);torso.scale.z=.66;
+  const collar=mesh(upper,new T.TorusGeometry(.083,.012,6,20),material(0xf0efe6),0,1.43,0);collar.rotation.x=Math.PI/2;
+  cylinder(upper,.07,.085,.12,skin,0,1.46,0);
+  const head=sphere(upper,.121,skin,0,1.64,0);head.scale.multiply(new T.Vector3(.88,1.12,.92));
+  const hair=sphere(upper,.123,0x302820,0,1.70,-.012);hair.scale.multiply(new T.Vector3(.9,.65,.93));
+  for(const x of [-.04,.04])sphere(upper,.008,0x30352d,x,1.65,.104);
+  sphere(upper,.017,skin,0,1.615,.112);
+  for(const x of [-.111,.111]){const ear=sphere(upper,.028,skin,x,1.63,0);ear.scale.multiply(new T.Vector3(.45,1,.7));}
+  const mouth=box(upper,.042,.006,.005,0x8c5849,0,1.587,.107);
   cylinder(body,.195,.2,.2,shorts,0,.84,0).scale.z=.73;
   const limbs={};
   for(const side of [-1,1]){
-    const arm=new T.Group();arm.position.set(side*.255,1.36,0);body.add(arm);
+    const arm=new T.Group();arm.position.set(side*.255,1.36,0);upper.add(arm);
     cylinder(arm,.09,.075,.19,fabricMaterial(shirt),0,-.075,0);
     cylinder(arm,.07,.058,.23,skin,0,-.20,0);
     const elbow=new T.Group();elbow.position.y=-.31;arm.add(elbow);
@@ -204,25 +205,31 @@ export function makeAthlete(scene,id,def,index){
   }
   // Jersey markings on both sides of the actual mesh.
   const tex=canvasTexture(128,128,(g)=>{g.clearRect(0,0,128,128);g.fillStyle='#fff';g.font='bold 53px sans-serif';g.textAlign='center';g.fillText(id,64,73);g.font='13px sans-serif';g.fillText(def?'DEFENCE':'HANDBALL',64,100);});
-  for(const side of [-1,1]){const number=mesh(body,new T.PlaneGeometry(.28,.28),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),0,1.2,side*.165);if(side<0)number.rotation.y=Math.PI;}
+  for(const side of [-1,1]){const number=mesh(upper,new T.PlaneGeometry(.28,.28),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),0,1.2,side*.165);if(side<0)number.rotation.y=Math.PI;}
   const ring=mesh(root,new T.RingGeometry(.36,.42,32),new T.MeshBasicMaterial({color:0xe6f784,side:T.DoubleSide,transparent:true,opacity:.9}),0,.018,0);ring.rotation.x=-Math.PI/2;ring.castShadow=false;
-  return {root,body,limbs,ring,def,phaseOffset:index*.71};
+  upper.position.y=1;for(const part of upper.children)part.position.y-=1;
+  return {root,body,upper,limbs,ring,def,phaseOffset:index*.71};
 }
-export function poseAthlete(model,{speed,phase,holding,throwing,receiving}){
-  const move=T.MathUtils.smoothstep(speed,.02,2.6),stride=Math.sin(phase)*.62*move;
+export function poseAthlete(model,{speed,phase,holding,throwing,receiving,acceleration=0,lateral=0,shooting=false}){
+  const move=T.MathUtils.smoothstep(speed,.02,2.6),stride=Math.sin(phase)*.72*move;
   const crouch=model.def?1:0;
   model.body.position.y=0;
-  model.body.rotation.set(.04+move*.055+crouch*.03,throwing===null?Math.sin(phase)*move*.035:Math.sin(throwing*Math.PI)*-.15,Math.sin(phase)*move*.018);
+  const drive=T.MathUtils.clamp(acceleration/10,-1,1)*move;
+  model.body.rotation.set(.035+move*.09+drive*.09+crouch*.035,0,Math.sin(phase)*move*.025);
+  model.upper.rotation.set(receiving?.045:0,Math.sin(phase)*move*.075,0);
   for(const side of [-1,1]){
     const l=model.limbs[side];
-    l.leg.rotation.set(side*stride-crouch*.12,0,side*(.035+crouch*.10));
+    l.leg.rotation.set(side*stride*(1-Math.abs(lateral)*.65)-crouch*.16,0,side*(.035+crouch*.14)+stride*lateral*.4);
     l.knee.rotation.x=.09+crouch*.2+Math.max(0,-side*stride)*1.2;
     l.arm.rotation.set(-.12-side*stride*.65,0,side*(model.def?.5:.1));
-    l.elbow.rotation.x=-.35-move*.2;
+    l.elbow.rotation.x=-.35-move*.65;
     if(model.def){l.arm.rotation.x=-.55+side*stride*.18;l.elbow.rotation.x=-.95;}
     if(holding||receiving){l.arm.rotation.x=-.62;l.arm.rotation.z=side*.08;l.elbow.rotation.x=-1.0;}
     if(throwing!==null){
-      const wind=T.MathUtils.smoothstep(throwing,0,.4),release=T.MathUtils.smoothstep(throwing,.4,.72),settle=T.MathUtils.smoothstep(throwing,.72,1);
+      const wind=T.MathUtils.smoothstep(throwing,0,.32),release=T.MathUtils.smoothstep(throwing,.32,.46),settle=T.MathUtils.smoothstep(throwing,.65,1);
+      model.upper.rotation.y=-.38*wind+.66*release-.28*settle;
+      model.upper.rotation.x=-.08*wind+.16*release-.08*settle;
+      if(shooting){l.knee.rotation.x+=.2*wind*(1-release);model.upper.rotation.y*=1.3;}
       if(side===1){l.arm.rotation.x=-.65-wind*1.6+release*.8+settle*1.25;l.arm.rotation.z=-.22*wind*(1-settle);l.elbow.rotation.x=-1.1+release*.85-settle*.1;}
       else {l.arm.rotation.x=-.6-release*.2+settle*.6;l.elbow.rotation.x=-.5;}
     }
@@ -246,6 +253,7 @@ export function makeHands(camera){
     sleeve.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),new T.Vector3(-side*.18,.25,-.25).normalize());
   }
   const ball=makeBall(root);ball.position.set(0,.025,-.015);
+  root.userData.ball=ball;
   root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});
   return root;
 }

@@ -1,4 +1,4 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609190639';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609190653';
 const E=window.TacticEngine,$=id=>document.getElementById(id),clamp=T.MathUtils.clamp;
 const STEP_NAMES=['逆パス','回り込み','RBへ','最後の判断'];
 
@@ -92,20 +92,31 @@ class CourtView extends window.PovView {
       const moving=speed>.05;
       let target=model.def?(st.ballPos||st.pos[st.holder]||me):E.GOAL;
       if(moving&&!model.def){const blend=T.MathUtils.smoothstep(speed,.05,1.5),len=Math.hypot(mx,mz)||1,goalLen=Math.hypot(target.x-q.x,target.y-q.y)||1;target={x:q.x+(mx/len)*blend+(target.x-q.x)/goalLen*(1-blend),y:q.y+(mz/len)*blend+(target.y-q.y)/goalLen*(1-blend)};}
-      let throwing=null,receiving=false;
+      let throwing=null,receiving=false,shooting=false;
       for(const action of actions){
         if(action.type==='pass'&&action.to===id&&t>=action.t-.25&&t<=action.t+action.dur+.15){receiving=true;target=st.pos[action.from];}
         if(((action.type==='pass'&&action.from===id)||(action.type==='shoot'&&action.who===id))&&t>=action.t-.35&&t<action.t+.5){
-          throwing=clamp((t-action.t+.35)/.85,0,1);target=action.type==='pass'?st.pos[action.to]:E.GOAL;
+          throwing=clamp((t-action.t+.35)/.85,0,1);shooting=action.type==='shoot';target=action.type==='pass'?st.pos[action.to]:E.GOAL;
         }
       }
       model.root.position.set(q.x,0,q.y);model.root.rotation.y=Math.atan2(target.x-q.x,target.y-q.y);
-      let distance=0;for(const track of this.motionTracks[id]||[]){const u=clamp((t-track.t)/track.dur,0,1),e=u<.5?2*u*u:-1+(4-2*u)*u;distance+=track.length*e;}
-      poseAthlete(model,{speed,phase:distance*5.2+model.phaseOffset,holding:st.holder===id,throwing,receiving});
+      let distance=0,acceleration=0;for(const track of this.motionTracks[id]||[]){const u=clamp((t-track.t)/track.dur,0,1),e=u<.5?2*u*u:-1+(4-2*u)*u;distance+=track.length*e;if(u>0&&u<1)acceleration+=4*track.length/(track.dur*track.dur)*(1-2*T.MathUtils.smoothstep(u,.38,.62));}
+      const yaw=model.root.rotation.y,lateral=model.def&&moving?clamp((mx*Math.cos(yaw)-mz*Math.sin(yaw))/(Math.hypot(mx,mz)||1),-1,1):0;
+      poseAthlete(model,{speed,phase:distance*5.2+model.phaseOffset,holding:st.holder===id,throwing,receiving,acceleration,lateral,shooting});
       model.ring.visible=this.learning&&(looks.has(id)||st.holder===id);
     }
-    this.hands.visible=st.holder==='RB'&&!st.ballPos&&!st.shotDone;
-    this.ball.visible=!this.hands.visible&&(!!st.ballPos||!!st.holder);
+    const ownBall=st.holder==='RB'&&!st.ballPos&&!st.shotDone;
+    let release=null,catching=0;
+    for(const action of actions){
+      if(((action.type==='pass'&&action.from==='RB')||(action.type==='shoot'&&action.who==='RB'))&&t>=action.t-.28&&t<action.t+.22)release={u:clamp((t-action.t+.28)/.5,0,1)};
+      if(action.type==='pass'&&action.to==='RB'){const arrival=action.t+action.dur;if(t>=arrival-.25&&t<arrival+.2)catching=Math.sin(clamp((t-arrival+.25)/.45,0,1)*Math.PI);}
+    }
+    this.hands.visible=ownBall||!!release||catching>0;
+    this.hands.userData.ball.visible=ownBall;
+    this.hands.position.set(0,-.32+catching*.045,-.65-catching*.06);
+    this.hands.rotation.set(0,0,0);
+    if(release){const wind=Math.sin(Math.min(release.u/.56,1)*Math.PI/2),follow=T.MathUtils.smoothstep(release.u,.56,1);this.hands.position.x=.07*wind;this.hands.position.y+=.08*wind-.12*follow;this.hands.position.z+=.08*wind-.22*follow;this.hands.rotation.x=-.16*wind+.25*follow;this.hands.rotation.z=-.1*wind;}
+    this.ball.visible=!ownBall&&(!!st.ballPos||!!st.holder);
     if(this.ball.visible){
       const q=st.ballPos||st.pos[st.holder];let x=q.x,z=q.y,height=st.ballPos?st.ballZ:1.15;
       if(!st.ballPos&&this.athletes[st.holder]){const rot=this.athletes[st.holder].root.rotation.y;x+=Math.sin(rot)*.32;z+=Math.cos(rot)*.32;}
