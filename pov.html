@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ハンド動き解説（目線）</title>
-<link rel="stylesheet" href="css/style.css?v=202609140018">
+<link rel="stylesheet" href="css/style.css?v=202609182217">
 </head>
 <body>
 <header class="top">
@@ -13,6 +13,8 @@
   <button class="btn" id="legendBtn">見かた</button>
 </header>
 <div class="purpose" id="purpose"></div>
+<div id="trial3d" hidden style="padding:8px 14px;background:#eef5df;font-size:13px"><a href="pov-3d.html" style="color:#234d3e;font-weight:700">3D試作を見る → 体育館でユーゴを体験</a></div>
+<script>if(new URLSearchParams(location.search).get('id')==='05')document.getElementById('trial3d').hidden=false;</script>
 <div class="toolbar"><button class="btn-restart" id="restartBtn">⏮ 最初から</button><button class="btn-mirror" id="mirrorBtn">⇄ 左右反転</button><a class="btn-top" id="topLink" href="./">▦ 上から図</a></div>
 <div class="app">
   <div class="pov-wrap">
@@ -40,10 +42,10 @@
   <button id="speed" class="speed">速さ 1x</button>
   <button id="next" class="nav primary">次へ ▶</button>
 </div>
-<script src="tactics/index.js?v=202609140018"></script>
-<script src="js/glossary.js?v=202609140018"></script>
-<script src="js/engine.js?v=202609140018"></script>
-<script src="js/pov.js?v=202609140018"></script>
-<script src="js/app.js?v=202609140018"></script>
+<script src="tactics/index.js?v=202609182217"></script>
+<script src="js/glossary.js?v=202609182217"></script>
+<script src="js/engine.js?v=202609182217"></script>
+<script src="js/pov.js?v=202609182217"></script>
+<script src="js/app.js?v=202609182217"></script>
 </body>
 </html>
