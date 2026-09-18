@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#153d38">
   <title>ユーゴ・RB目線 3D試作 | ハンド動き解説</title>
-  <link rel="stylesheet" href="css/pov-3d.css?v=202609190653">
+  <link rel="stylesheet" href="css/pov-3d.css?v=202609190657">
 </head>
 <body>
   <header class="page-head"><a href="./">← アプリの一覧へ</a><span class="lab">3D テスト版</span></header>
@@ -36,17 +36,17 @@
       <div class="dock">
         <div class="scene-caption"><span id="stepTitle"></span><span id="modeName">学習</span></div>
         <div class="coach" id="coach"><p id="callout"></p></div>
-        <div class="transport"><button id="prev" aria-label="前のステップ">前へ</button><button id="play" class="primary">▶ 再生</button><button id="next">次へ</button><button id="choose">選択肢</button></div>
+        <div class="transport"><button id="restartAlways" aria-label="最初の場面から再生">最初から</button><button id="prev" aria-label="前のステップ">前へ</button><button id="play" class="primary">▶ 再生</button><button id="next">次へ</button><button id="choose">選択肢</button></div>
         <div class="timeline"><label for="seek">場面の進み具合</label><input id="seek" type="range" min="0" max="1000" value="0"><span id="time">0.0 / 0.0秒</span></div>
       </div>
       <div id="loading" role="status">体育館を準備しています…</div>
     </section>
   </main>
-  <script src="js/engine.js?v=202609190653"></script>
-  <script src="js/pov.js?v=202609190653"></script>
-  <script src="tactics/05-yugo.js?v=202609190653"></script>
+  <script src="js/engine.js?v=202609190657"></script>
+  <script src="js/pov.js?v=202609190657"></script>
+  <script src="tactics/05-yugo.js?v=202609190657"></script>
   <script type="module">
-    import('./js/pov-3d.js?v=202609190653').catch(() => {
+    import('./js/pov-3d.js?v=202609190657').catch(() => {
       const box = document.getElementById('loading');
       box.replaceChildren(document.createTextNode('3Dを読み込めませんでした。ページを再読み込みするか、'));
       const a = document.createElement('a'); a.href = 'pov.html?id=05&pos=RB'; a.textContent = '元のRB目線を開く'; box.append(a);

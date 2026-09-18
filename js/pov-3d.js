@@ -1,4 +1,4 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609190653';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609190657';
 const E=window.TacticEngine,$=id=>document.getElementById(id),clamp=T.MathUtils.clamp;
 const STEP_NAMES=['逆パス','回り込み','RBへ','最後の判断'];
 
@@ -251,7 +251,7 @@ try{
   $('next').onclick=()=>{hidePanels();if(view.stopped)view.resume();else if(player.stepIndex===3)showChoices();else changeStep(player.stepIndex+1);};
   $('choose').onclick=showChoices;
   const restart=()=>{view.yawOffset=0;view.pitchOffset=0;changeStep(0,true);};
-  $('restart').onclick=restart;$('startOver').onclick=restart;
+  $('restartAlways').onclick=restart;$('restart').onclick=restart;$('startOver').onclick=restart;
   $('tryOther').onclick=showChoices;
   $('again').onclick=()=>{if(player.branch)startBranch(player.branch);else changeStep(player.stepIndex,true);};
   $('closeChoice').onclick=()=>{hidePanels();$('choose').focus({preventScroll:true});};
