@@ -5,36 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#153d38">
   <title>ユーゴ・RB目線 3D試作 | ハンド動き解説</title>
-  <link rel="stylesheet" href="css/pov-3d.css?v=202609182229">
+  <link rel="stylesheet" href="css/pov-3d.css?v=202609182244">
 </head>
 <body>
   <header class="page-head"><a href="./">← アプリの一覧へ</a><span class="lab">3D テスト版</span></header>
   <main>
-    <div class="heading"><div><p class="eyebrow">ON THE COURT / 05</p><h1>ユーゴ <span>右45°の景色</span></h1></div><span class="position">RB</span></div>
-    <div class="modebar" role="group" aria-label="表示モード"><button id="learn" class="selected" aria-pressed="true">学習モード</button><button id="experience" aria-pressed="false">体験モード</button><button id="sound" aria-pressed="false">音 OFF</button></div>
     <section class="stage" aria-label="RB目線の3D体育館">
       <canvas id="scene" tabindex="0" aria-label="指でドラッグ、または矢印キーで周囲を見回せます"></canvas>
       <div class="hud"><span id="viewStatus">RB目線 · 自動視線</span><span id="sceneStep">01 / 04</span></div>
       <div id="labels" aria-hidden="true"></div>
       <div class="mini"><svg id="court" aria-label="上から見た選手配置"></svg></div>
-      <button id="resetView" class="reset-view">視線を戻す</button>
+      <div class="scene-tools"><button id="resetView">視線を戻す</button><button id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel">設定</button></div>
       <button id="stopBox" class="stop-box" hidden></button>
       <div id="shot" class="shot" hidden>シュート！</div>
+      <section id="choicePanel" class="overlay-panel" aria-labelledby="choiceTitle" hidden>
+        <div class="panel-heading"><h2 id="choiceTitle">次のプレーを選ぶ</h2><button id="closeChoice" aria-label="選択パネルを閉じる">閉じる</button></div>
+        <p id="choiceHint">守備の反応が違う3つの場面を試そう</p><div id="branches"></div>
+      </section>
+      <section id="resultPanel" class="overlay-panel" aria-labelledby="resultTitle" hidden>
+        <div class="panel-heading"><h2 id="resultTitle">プレー終了</h2><button id="closeResult">閉じる</button></div>
+        <p id="resultText"></p><div class="result-actions"><button id="tryOther">別の選択を試す</button><button id="again">もう一度</button><button id="startOver">最初から</button></div>
+      </section>
+      <section id="settingsPanel" class="overlay-panel settings-panel" aria-labelledby="settingsTitle" hidden>
+        <div class="panel-heading"><h2 id="settingsTitle">設定・場面を選ぶ</h2><button id="closeSettings">閉じる</button></div>
+        <div class="modebar" role="group" aria-label="表示モード"><button id="learn" class="selected" aria-pressed="true">学習モード</button><button id="experience" aria-pressed="false">体験モード</button></div>
+        <div class="settings-row"><button id="sound" aria-pressed="false">音 OFF</button><button id="speed" aria-label="再生速度">速さ 1×</button><button id="wide" aria-pressed="false">広い視野</button></div>
+        <nav id="steps" aria-label="ステップ"></nav><button id="restart">最初から</button>
+        <details class="help"><summary>使い方・この試作について</summary><p>青は味方、オレンジは守備。黄色が今見る相手です。指で3D画面をドラッグして見回せます。</p><p>学習モードは見るポイントを表示し、判断時に一時停止します。体験モードは解説を減らして本線を連続再生します。どちらも最後に3択が表示されます。</p><p>選手の動きは簡易表現で、実選手のフォーム再現ではありません。GKは省略しています。「仮」は推定の助言です。音は初期OFF、視点の揺れはありません。</p><p><a href="tactic.html?id=05">上から図</a> · <a href="pov.html?id=05&pos=RB">元のRB目線</a></p></details>
+      </section>
+      <div class="dock">
+        <div class="scene-caption"><span id="stepTitle"></span><span id="modeName">学習</span></div>
+        <div class="coach" id="coach"><p id="callout"></p></div>
+        <div class="transport"><button id="prev" aria-label="前のステップ">前へ</button><button id="play" class="primary">▶ 再生</button><button id="next">次へ</button><button id="choose">選択肢</button></div>
+        <div class="timeline"><label for="seek">場面の進み具合</label><input id="seek" type="range" min="0" max="1000" value="0"><span id="time">0.0 / 0.0秒</span></div>
+      </div>
       <div id="loading" role="status">体育館を準備しています…</div>
     </section>
-    <div class="view-tools"><span>ドラッグで周囲を見る</span><button id="wide" aria-pressed="false">広い視野</button><button id="expand" aria-pressed="false">画面を広げる</button></div>
-    <div class="coach" id="coach"><span class="coach-label">見るポイント</span><p id="callout">再生すると、見る相手と判断のポイントが表示されます。</p></div>
-    <div class="transport"><button id="prev" aria-label="前のステップ">前へ</button><button id="play" class="primary">▶ 再生</button><button id="next">次へ</button><button id="speed" aria-label="再生速度">1×</button></div>
-    <div class="timeline"><label for="seek">場面の進み具合</label><input id="seek" type="range" min="0" max="1000" value="0"><span id="time">0.0 / 0.0秒</span></div>
-    <section class="lesson"><div class="lesson-top"><span class="eyebrow">PLAY SEQUENCE</span><button id="restart">最初から</button></div><nav id="steps" aria-label="ステップ"></nav><h2 id="stepTitle"></h2><p id="stepText"></p><div id="branches"></div></section>
-    <details class="help"><summary>使い方・この試作について</summary><p>青は味方、オレンジは守備。黄色の印が今見る相手です。学習モードは判断の場面で止まります。「続き」で進めてください。体験モードは解説表示を減らし、本線を連続再生します。最後の3択は自分で選んでください。</p><p>手元のボールは保持中に表示します。視点の揺れはありません。音はボタンでONにできます。動きを減らす端末設定では、各場面の最後を表示します。</p><p>選手の身体動作・体育館は、この試作用の簡易表現です。実際の選手のフォームを再現したものではありません。GKは既存の戦術データに含まれていないため表示していません。助言の「仮」は指導者確認前の推定です。</p><p><a href="tactic.html?id=05">上から図で確認</a> · <a href="pov.html?id=05&pos=RB">元のRB目線と比較</a></p></details>
-    <footer>HANDBALL TACTICS <span>3D COURT LAB · 01</span></footer>
   </main>
-  <script src="js/engine.js?v=202609182229"></script>
-  <script src="js/pov.js?v=202609182229"></script>
-  <script src="tactics/05-yugo.js?v=202609182229"></script>
+  <script src="js/engine.js?v=202609182244"></script>
+  <script src="js/pov.js?v=202609182244"></script>
+  <script src="tactics/05-yugo.js?v=202609182244"></script>
   <script type="module">
-    import('./js/pov-3d.js?v=202609182229').catch(() => {
+    import('./js/pov-3d.js?v=202609182244').catch(() => {
       const box = document.getElementById('loading');
       box.replaceChildren(document.createTextNode('3Dを読み込めませんでした。ページを再読み込みするか、'));
       const a = document.createElement('a'); a.href = 'pov.html?id=05&pos=RB'; a.textContent = '元のRB目線を開く'; box.append(a);

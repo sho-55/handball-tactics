@@ -1,4 +1,4 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609182229';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609182244';
 const E=window.TacticEngine,$=id=>document.getElementById(id),clamp=T.MathUtils.clamp;
 const STEP_NAMES=['逆パス','回り込み','RBへ','最後の判断'];
 
@@ -55,6 +55,10 @@ class CourtView extends window.PovView {
     // Learning mode waits for an explicit user action even during continuous play.
     if(this.stopped)clearTimeout(this.stopTimer);
     if(this.renderer)updateUI();
+  }
+  showStop(c){
+    super.showStop(c);
+    this.stopBox.querySelector('.small').textContent='タップまたは「続き」で再開 ▶';
   }
   drawMini(st){
     const c=this.cam,R=9,M=E.M,a=Math.atan2(c.fw.y,c.fw.x);let d=`M ${c.x*M} ${c.y*M}`;
@@ -122,7 +126,7 @@ class CourtView extends window.PovView {
     document.body.classList.toggle('experience',!value);
     $('learn').classList.toggle('selected',value);$('experience').classList.toggle('selected',!value);
     $('learn').setAttribute('aria-pressed',String(value));$('experience').setAttribute('aria-pressed',String(!value));
-    if(this.stopped&&!value)this.resume();this.redraw();updateUI();
+    if(this.stopped&&!value)this.clearStop();this.resize();this.redraw();updateUI();
   }
 }
 
@@ -148,55 +152,96 @@ class CourtSound {
   }
 }
 
-let player,view;
+let player,view,terminalSeen=null,changing=false;
+const panelIds=['choicePanel','resultPanel','settingsPanel'];
+function hidePanels(){
+  panelIds.forEach(id=>$(id).hidden=true);
+  document.body.classList.remove('panel-open');$('settingsBtn').setAttribute('aria-expanded','false');
+}
+function showPanel(id){
+  hidePanels();$(id).hidden=false;document.body.classList.add('panel-open');
+  $('settingsBtn').setAttribute('aria-expanded',String(id==='settingsPanel'));
+}
+function pausePlayback(){player.auto=false;clearTimeout(player.autoTimer);player.pause();}
+function showChoices(){
+  pausePlayback();changing=true;view.clearStop();
+  player.gotoStep(3,false);player.t=player.total;player.render();
+  terminalSeen=player.seq;changing=false;renderPanel();showPanel('choicePanel');
+}
+function startBranch(branch){
+  hidePanels();view.yawOffset=0;view.pitchOffset=0;terminalSeen=null;
+  player.playBranch(branch);renderPanel();
+}
 function updateUI(){
   if(!player)return;
-  $('play').textContent=view?.stopped?'続き ▶':player.playing||player.auto?'Ⅱ 一時停止':'▶ 再生';
+  const ended=player.t>=player.total;
+  $('play').textContent=view?.stopped?'続き ▶':ended&&player.stepIndex===3?(player.branch?'↻ もう一度':'プレーを選ぶ'):player.playing||player.auto?'Ⅱ 一時停止':'▶ 再生';
   $('prev').disabled=player.stepIndex===0&&!player.branch;
-  $('next').textContent=view?.stopped?'続き':player.stepIndex===3?'最初へ':'次へ';
+  $('next').textContent=view?.stopped?'続き':player.stepIndex===3?'選ぶ':'次へ';
   $('sceneStep').textContent=`0${player.stepIndex+1} / 04`;
+  $('modeName').textContent=view?.learning===false?'体験':'学習';
   $('seek').value=player.total?Math.round(player.t/player.total*1000):0;
   $('time').textContent=`${player.t.toFixed(1)} / ${player.total.toFixed(1)}秒`;
   document.querySelectorAll('#steps button').forEach((b,i)=>{b.classList.toggle('active',i===player.stepIndex);b.setAttribute('aria-current',i===player.stepIndex?'step':'false');});
+  if(view&&!changing&&!view.stopped&&player.t>=player.total&&terminalSeen!==player.seq){
+    terminalSeen=player.seq;
+    if(player.branch){pausePlayback();$('resultText').textContent=player.branch.label;showPanel('resultPanel');}
+    else if(player.stepIndex===3){pausePlayback();showPanel('choicePanel');}
+  }
 }
 function renderPanel(){
   if(!player)return;
-  $('stepTitle').textContent=player.branch?player.branch.label:player.step.title;
-  $('stepText').textContent=player.branch?player.branch.text:player.step.text;
+  $('stepTitle').textContent=player.branch?player.branch.label:STEP_NAMES[player.stepIndex]+' · '+player.step.title;
+  // Rebuild only when the branch changes, never for every animation frame.
   const b=$('branches');b.replaceChildren();
-  if(player.stepIndex===3){
-    const note=document.createElement('small');note.textContent='守備の反応が違う3つの場面を試そう';b.append(note);
-    for(const branch of player.step.branches){const button=document.createElement('button');button.textContent=branch.label;button.classList.toggle('active',player.branch===branch);button.onclick=()=>{view.yawOffset=0;view.pitchOffset=0;player.playBranch(branch);renderPanel();};b.append(button);}
+  for(const [i,branch] of player.data.steps[3].branches.entries()){
+    const button=document.createElement('button');button.textContent=['① アウト割り','② PVパス','③ サイド落とし'][i];
+    button.classList.toggle('active',player.branch===branch);button.onclick=()=>startBranch(branch);b.append(button);
   }
   updateUI();
 }
-function changeStep(i){player.auto=false;clearTimeout(player.autoTimer);view?.clearStop();player.gotoStep(i,false);renderPanel();}
+function changeStep(i,play=false){
+  hidePanels();pausePlayback();changing=true;view?.clearStop();terminalSeen=null;
+  player.gotoStep(i,false);changing=false;renderPanel();
+  if(play){player.auto=true;player.play();updateUI();}
+}
 try{
-  // The trial uses its own filtered copy; existing pages retain all their data.
   const data=structuredClone(window.TACTICS['05']);data.steps.forEach((s,i)=>{if(i!==3)s.branches=[];});
   player=new E.Player(data,$('court'));player.pause();view=new CourtView(player);
   window.player=player;window.pov=view;window.court3d=view;
   player.onChange=renderPanel;
-  // SVG minimap is not interactive; remove duplicated internal ID inherited from the original engine.
   const internal=$('court').querySelector('g#court');if(internal)internal.id='court-lines-3d';
   for(let i=0;i<4;i++){const b=document.createElement('button');b.textContent=`${i+1} ${STEP_NAMES[i]}`;b.onclick=()=>changeStep(i);$('steps').append(b);}
   $('play').onclick=()=>{
-    if(view.stopped){view.resume();}
-    else if(player.playing||player.auto){player.auto=false;clearTimeout(player.autoTimer);player.pause();}
-    else{player.auto=!player.branch;if(player.t>=player.total){if(player.stepIndex===3&&!player.branch)player.gotoStep(0,false);else player.restart(false);}player.play();}
+    hidePanels();
+    if(view.stopped)view.resume();
+    else if(player.playing||player.auto)pausePlayback();
+    else if(player.stepIndex===3&&!player.branch&&player.t>=player.total)showChoices();
+    else{
+      if(player.t>=player.total){changing=true;terminalSeen=null;player.restart(false);changing=false;}
+      player.auto=!player.branch;player.play();
+    }
     updateUI();
   };
   $('prev').onclick=()=>changeStep(player.branch?player.stepIndex:Math.max(0,player.stepIndex-1));
-  $('next').onclick=()=>{if(view.stopped)view.resume();else changeStep((player.stepIndex+1)%4);};
-  $('restart').onclick=()=>{view.yawOffset=0;view.pitchOffset=0;changeStep(0);};
-  $('speed').onclick=()=>{const speeds=[.5,1,1.5];player.speed=speeds[(speeds.indexOf(player.speed)+1)%3];$('speed').textContent=player.speed+'×';};
-  $('seek').addEventListener('input',()=>{player.auto=false;clearTimeout(player.autoTimer);player.pause();view.clearStop();player.t=player.total*Number($('seek').value)/1000;player.render();updateUI();});
+  $('next').onclick=()=>{hidePanels();if(view.stopped)view.resume();else if(player.stepIndex===3)showChoices();else changeStep(player.stepIndex+1);};
+  $('choose').onclick=showChoices;
+  const restart=()=>{view.yawOffset=0;view.pitchOffset=0;changeStep(0,true);};
+  $('restart').onclick=restart;$('startOver').onclick=restart;
+  $('tryOther').onclick=showChoices;
+  $('again').onclick=()=>{if(player.branch)startBranch(player.branch);else changeStep(player.stepIndex,true);};
+  $('closeChoice').onclick=()=>{hidePanels();$('choose').focus({preventScroll:true});};
+  $('closeResult').onclick=()=>{hidePanels();$('choose').focus({preventScroll:true});};
+  $('settingsBtn').onclick=()=>{pausePlayback();showPanel('settingsPanel');updateUI();};
+  $('closeSettings').onclick=()=>{hidePanels();$('settingsBtn').focus({preventScroll:true});};
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){hidePanels();$('settingsBtn').focus({preventScroll:true});}});
+  $('speed').onclick=()=>{const speeds=[.5,1,1.5];player.speed=speeds[(speeds.indexOf(player.speed)+1)%3];$('speed').textContent='速さ '+player.speed+'×';};
+  $('seek').addEventListener('input',()=>{hidePanels();pausePlayback();view.clearStop();player.t=player.total*Number($('seek').value)/1000;player.render();updateUI();});
   $('learn').onclick=()=>view.setLearning(true);$('experience').onclick=()=>view.setLearning(false);
   $('resetView').onclick=()=>{view.yawOffset=0;view.pitchOffset=0;view.redraw();};
   $('wide').onclick=()=>{view.wide=!view.wide;$('wide').setAttribute('aria-pressed',String(view.wide));$('wide').textContent=view.wide?'標準の視野':'広い視野';view.resize();view.redraw();};
-  $('expand').onclick=()=>{const expanded=document.body.classList.toggle('expanded');$('expand').setAttribute('aria-pressed',String(expanded));$('expand').textContent=expanded?'元の大きさ':'画面を広げる';view.resize();view.redraw();document.querySelector('.stage').scrollIntoView({block:'start'});};
   $('sound').onclick=async()=>{try{const enabled=await view.sound.toggle();$('sound').textContent=enabled?'音 ON':'音 OFF';$('sound').setAttribute('aria-pressed',String(enabled));}catch{$('sound').textContent='音を使えません';}};
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){player.auto=false;clearTimeout(player.autoTimer);player.pause();view.clearStop();view.sound.previous=null;updateUI();}});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){pausePlayback();view.sound.previous=null;updateUI();}});
   renderPanel();
 }catch(error){
   player?.pause();console.error(error);$('loading').hidden=false;
