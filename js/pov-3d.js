@@ -1,4 +1,4 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609182302';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609190639';
 const E=window.TacticEngine,$=id=>document.getElementById(id),clamp=T.MathUtils.clamp;
 const STEP_NAMES=['逆パス','回り込み','RBへ','最後の判断'];
 
@@ -9,7 +9,7 @@ class CourtView extends window.PovView {
     this.canvas=$('scene');this.learning=true;this.yawOffset=0;this.pitchOffset=0;this.wide=false;
     this.renderer=new T.WebGLRenderer({canvas:this.canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
     this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;
-    this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.15;
+    this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.0;
     this.scene=new T.Scene();this.camera=new T.PerspectiveCamera(70,1,.06,90);this.scene.add(this.camera);
     buildGym(this.scene,this.renderer);this.athletes={};this.labels={};
     Object.entries(player.data.players).forEach(([id,p],i)=>{
@@ -74,21 +74,34 @@ class CourtView extends window.PovView {
     this.camera.lookAt(me.x+dx*Math.cos(pitch),1.6+Math.sin(pitch),me.y+dz*Math.cos(pitch));this.camera.updateMatrixWorld();
     const cue=this.cueAt(this.contexts().cur.cues,t),looks=new Set([].concat(cue?.look||[]));
     const actions=this.p.seq.actions;
+    if(this.motionSequence!==this.p.seq){
+      this.motionSequence=this.p.seq;this.motionTracks={};
+      for(const action of actions){
+        if(!['move','block'].includes(action.type))continue;
+        const start=E.stateAt(this.p.seq.start,actions,action.t).pos[action.who];
+        const pts=[[start.x,start.y],...action.to];let length=0;
+        for(let k=1;k<pts.length;k++)length+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]);
+        (this.motionTracks[action.who]??=[]).push({t:action.t,dur:action.dur,length});
+      }
+    }
     const previous=E.stateAt(this.p.seq.start,actions,Math.max(0,t-.06));
     const future=E.stateAt(this.p.seq.start,actions,Math.min(this.p.total,t+.06));
     for(const [id,model] of Object.entries(this.athletes)){
       const q=st.pos[id],a=previous.pos[id],b=future.pos[id],mx=b.x-a.x,mz=b.y-a.y;
-      const moving=Math.hypot(mx,mz)>.005;
-      let target=moving?{x:q.x+mx,y:q.y+mz}:model.def?(st.ballPos||st.pos[st.holder]||me):E.GOAL;
+      const speed=Math.hypot(mx,mz)/Math.max(.001,Math.min(this.p.total,t+.06)-Math.max(0,t-.06));
+      const moving=speed>.05;
+      let target=model.def?(st.ballPos||st.pos[st.holder]||me):E.GOAL;
+      if(moving&&!model.def){const blend=T.MathUtils.smoothstep(speed,.05,1.5),len=Math.hypot(mx,mz)||1,goalLen=Math.hypot(target.x-q.x,target.y-q.y)||1;target={x:q.x+(mx/len)*blend+(target.x-q.x)/goalLen*(1-blend),y:q.y+(mz/len)*blend+(target.y-q.y)/goalLen*(1-blend)};}
       let throwing=null,receiving=false;
       for(const action of actions){
-        if(action.type==='pass'&&action.to===id&&t>=action.t-.25&&t<=action.t+action.dur+.15)receiving=true;
-        if(((action.type==='pass'&&action.from===id)||(action.type==='shoot'&&action.who===id))&&t>=action.t-.25&&t<action.t+.35){
-          throwing=clamp((t-action.t+.25)/.6,0,1);target=action.type==='pass'?st.pos[action.to]:E.GOAL;
+        if(action.type==='pass'&&action.to===id&&t>=action.t-.25&&t<=action.t+action.dur+.15){receiving=true;target=st.pos[action.from];}
+        if(((action.type==='pass'&&action.from===id)||(action.type==='shoot'&&action.who===id))&&t>=action.t-.35&&t<action.t+.5){
+          throwing=clamp((t-action.t+.35)/.85,0,1);target=action.type==='pass'?st.pos[action.to]:E.GOAL;
         }
       }
       model.root.position.set(q.x,0,q.y);model.root.rotation.y=Math.atan2(target.x-q.x,target.y-q.y);
-      poseAthlete(model,{moving,phase:t*10,holding:st.holder===id,throwing,receiving});
+      let distance=0;for(const track of this.motionTracks[id]||[]){const u=clamp((t-track.t)/track.dur,0,1),e=u<.5?2*u*u:-1+(4-2*u)*u;distance+=track.length*e;}
+      poseAthlete(model,{speed,phase:distance*5.2+model.phaseOffset,holding:st.holder===id,throwing,receiving});
       model.ring.visible=this.learning&&(looks.has(id)||st.holder===id);
     }
     this.hands.visible=st.holder==='RB'&&!st.ballPos&&!st.shotDone;
