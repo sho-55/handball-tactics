@@ -4,19 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ハンド動き解説</title>
-<link rel="stylesheet" href="css/style.css?v=202609182217">
+<link rel="stylesheet" href="css/style.css?v=202609182229">
 </head>
 <body>
 <header class="top"><h1>ハンド動き解説（きっかけシート）</h1></header>
 <div class="purpose">セットを選ぶと、駒が動いて流れを説明します。</div>
 <div class="list" id="list"></div>
-<script src="tactics/index.js?v=202609182217"></script>
+<script src="tactics/index.js?v=202609182229"></script>
 <script>
   const list = document.getElementById("list");
   window.TACTIC_LIST.forEach((t) => {
     const a = document.createElement("a"); a.className = "card"; a.href = "tactic.html?id=" + t.id;
     a.innerHTML = `<div class="no">セット ${t.id}</div><h2>${t.title}</h2><p>${t.summary}</p>`;
     list.appendChild(a);
+    if (t.trial3d) {
+      const trial = document.createElement("a"); trial.className = "card trial3d"; trial.href = t.trial3d;
+      trial.innerHTML = `<div class="no">セット ${t.id}　3Dテスト版</div><h2>ユーゴを3Dで体験する</h2><p>右45度（RB）の目線で体育館へ。立体選手の動きを見ながら、パスや攻め方を確認できます。</p><span class="trial-link">3Dテストを開く →</span>`;
+      list.appendChild(trial);
+    }
     // 目線ページがあるセットは、その下に目線リンクを出す
     (t.povCards || []).forEach((c) => {
       const b = document.createElement("a"); b.className = "card pov"; b.href = `pov.html?id=${t.id}&pos=${c.pos}` + (c.mirror ? "&mirror=1" : "");

@@ -111,3 +111,9 @@ canvas#pov { width: 100%; display: block; border-radius: 8px; background: #d5dde
 @media (min-width: 760px) { .pov-wrap { position: sticky; top: 0; align-self: start; } }
 .controls .primary.resume { background: var(--accent); }
 .card.pov { border-left: 5px solid var(--ball); background: #fffbea; }
+
+/* 一覧から直接開ける3Dテストの入口 */
+.card.trial3d { background: #edf4e3; border: 2px solid #83a35e; }
+.card.trial3d .no { color: #47632f; }
+.card.trial3d h2 { color: #234d3e; }
+.trial-link { display: inline-block; margin-top: 12px; padding: 8px 13px; border-radius: 8px; background: #234d3e; color: #fff; font-size: 13px; font-weight: 700; }
