@@ -1,4 +1,4 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609182258';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609182302';
 const E=window.TacticEngine,$=id=>document.getElementById(id),clamp=T.MathUtils.clamp;
 const STEP_NAMES=['逆パス','回り込み','RBへ','最後の判断'];
 
