@@ -1,10 +1,10 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609191643';
-import {mirrorTactic} from './mirror-tactic.js?v=202609191643';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609191808';
+import {mirrorTactic} from './mirror-tactic.js?v=202609191808';
 const MIRRORED=new URLSearchParams(location.search).get('mirror')==='1';
 const E=window.TacticEngine,$=id=>document.getElementById(id),clamp=T.MathUtils.clamp;
 const STEP_NAMES=MIRRORED?['回り込み','RBとPVの判断']:['逆パス','回り込み','RBへ','最後の判断'];
 const CHOICE_STEP=STEP_NAMES.length-1;
-const CHOICE_LABELS=MIRRORED?['① ロングシュート','② 左へ展開 → PV','③ 右へ展開 → PV','④ PV経由で左の3対2','⑤ 左でもらって縦の2対1']:['① アウト割り','② PVパス','③ サイド落とし'];
+const CHOICE_LABELS=MIRRORED?['① 3枚目が出なければ\n→ ロングシュート','② 左3枚目が出てきたら\n→ LBへパスし、PVへつなぐ','③ 右3枚目が出てきたら\n→ CBへパスし、PVへつなぐ','④ 左3枚目がけん制したら\n→ PVへパスし、左で3対2','⑤ 右3枚目がけん制したら\n→ 左でもらい、PVと縦の2対1']:['① アウト割り','② PVパス','③ サイド落とし'];
 
 // Retain the existing cue timeline and branch state calculation; render in WebGL.
 class CourtView extends window.PovView {
@@ -299,7 +299,7 @@ try{
   if(MIRRORED){
     document.body.classList.add('mirrored');
     $('choiceTitle').textContent='中央のRB：守備を見て選ぶ';
-    $('choiceHint').textContent='5つの守備の反応を体験。選択後はシュートまで再生。';
+    $('choiceHint').textContent='守備の動き → 選ぶプレー。選択後はシュートまで再生。';
     $('modeHelp').textContent='学習モードは見るポイントを表示し、判断時に一時停止します。体験モードは解説を減らして連続再生します。中央でRBの5択を選ぶと、パス先のプレーはシュートまで自動で進みます。';
     document.title='ユーゴ・左右反転 RB目線 3D | ハンド動き解説';
     document.querySelector('.lab').textContent='3D · 左右反転';
