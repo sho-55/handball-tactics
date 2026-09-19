@@ -201,7 +201,7 @@ export function makeAthlete(scene,id,def,index){
     cylinder(knee,.048,.05,.14,0xf1eee0,0,-.28,0);
     const shoe=sphere(knee,1,0xe8e9e0,0,-.345,.06);shoe.scale.set(.073,.063,.145);const sole=box(knee,.135,.025,.28,0x34413c,0,-.395,.06);
     box(knee,.137,.03,.12,shirt,0,-.35,.08);
-    limbs[side]={arm,elbow,leg,knee,sole};
+    limbs[side]={arm,elbow,hand,leg,knee,sole};
   }
   // Jersey markings on both sides of the actual mesh.
   const tex=canvasTexture(128,128,(g)=>{g.clearRect(0,0,128,128);g.fillStyle='#fff';g.font='bold 53px sans-serif';g.textAlign='center';g.fillText(id,64,73);g.font='13px sans-serif';g.fillText(def?'DEFENCE':'HANDBALL',64,100);});

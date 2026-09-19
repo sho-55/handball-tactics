@@ -20,7 +20,7 @@ async def main():
     await page.goto(BASE+'/')
     link=page.locator('a.trial3d').filter(has_text='セット 06').filter(has_text='左右反転') if mirror else page.locator('a.trial3d').filter(has_text='セット 06').filter(has_text='3Dテスト版')
     await link.tap();await page.wait_for_function('!!window.court3d')
-    assert await page.evaluate("court3d.pos==='RB'&&!court3d.athletes.RB&&player.data.id==='06'")
+    assert await page.evaluate("court3d.pos==='RB'&&court3d.overview&&!!court3d.athletes.RB&&player.data.id==='06'")
     assert await page.locator('#branches button').count()==count
     assert await page.evaluate('player.data.steps.length')==steps
     assert 'サイドユーゴ' in await page.title()
@@ -38,7 +38,7 @@ async def main():
        const q=b.pos[map(id)];maxError=Math.max(maxError,Math.abs(q.x-(mirror?20-p.x:p.x)),Math.abs(q.y-p.y));
        const m=court3d.athletes[map(id)];if(m)maxError=Math.max(maxError,Math.abs(m.root.position.x-q.x),Math.abs(m.root.position.z-q.y));
       }
-      if(court3d.camera.position.distanceTo(new T.Vector3(b.pos.RB.x,1.6,b.pos.RB.y))>1e-8)throw Error('camera is not RB');
+      if(Math.abs(court3d.camera.position.y-3.6)>1e-8||Math.abs(Math.hypot(court3d.camera.position.x-b.pos.RB.x,court3d.camera.position.z-b.pos.RB.y)-3.6)>1e-8)throw Error('camera must follow behind RB');
       const points=[];for(const x of [8.5,11.5])for(const y of [0,2])points.push(new T.Vector3(x,y,0));
       if(court3d.ball.visible)points.push(court3d.ball.position.clone());
       for(const q of points){const v=q.project(court3d.camera);maxExtent=Math.max(maxExtent,Math.abs(v.x),Math.abs(v.y));if(v.z>1||v.z< -1||Math.abs(v.x)>.86||Math.abs(v.y)>.86)throw Error(JSON.stringify({step:player.stepIndex,t,branch:player.branch?.label,v}));}
@@ -58,7 +58,7 @@ async def main():
       player.gotoStep(2,false);player.t=player.total;player.render();
       if(E.stateAt(player.seq.start,player.seq.actions,player.t).holder!=='RB')throw Error('choice after passing');
       player.playBranch(player.step.branches[3]);player.pause();player.t=1.15;player.render();
-      if(!court3d.hands.userData.ball.visible||court3d.ball.visible)throw Error('fake released ball');
+      if(court3d.hands.visible||!court3d.ball.visible)throw Error('fake ball must stay at RB hand');
      }
      if(sourceJSON!==JSON.stringify(source))throw Error('source mutated');
      return {samples,maxError,maxExtent,maxHFov};
@@ -87,10 +87,11 @@ async def main():
      assert await page.evaluate('scrollY===0&&document.documentElement.scrollWidth<=innerWidth')
      await page.screenshot(path=str(OUT/f'{engine}-{mirror}-{w}x{h}.png'))
     await page.locator('#closeChoice').tap();await page.set_viewport_size({'width':375,'height':812})
-    for i,t,label in ([(0,.4,'start'),(1,2.4,'catch'),(2,1.2,'decision')] if mirror else [(0,.5,'start'),(2,2.5,'catch')]):
+    for i,t,label in ([(0,.4,'start'),(1,2.4,'catch'),(2,0,'decision')] if mirror else [(0,.5,'start'),(2,2.5,'catch')]):
      await page.evaluate('([i,t])=>{player.gotoStep(i,false);player.t=t;player.render()}',[i,t]);await page.screenshot(path=str(OUT/f'{engine}-{mirror}-{label}.png'))
     if mirror:
      await page.evaluate('player.gotoStep(2,false);player.playBranch(player.step.branches[3]);player.pause();player.t=1.15;player.render()')
+     if await page.locator('#choicePanel').is_visible():await page.locator('#closeChoice').tap()
      await page.screenshot(path=str(OUT/f'{engine}-fake.png'))
     await page.emulate_media(reduced_motion='reduce');await page.reload();await page.wait_for_function('!!window.court3d')
     await page.locator('#choose').tap();await page.locator('#branches button').last.tap()

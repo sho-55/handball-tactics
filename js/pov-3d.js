@@ -1,5 +1,5 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609191846';
-import {mirrorTactic} from './mirror-tactic.js?v=202609191846';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609192318';
+import {mirrorTactic} from './mirror-tactic.js?v=202609192318';
 const PARAMS=new URLSearchParams(location.search),MIRRORED=PARAMS.get('mirror')==='1';
 const TACTIC_ID=PARAMS.get('id')==='06'?'06':'05',SIDE_YUGO=TACTIC_ID==='06';
 const TACTIC_NAME=SIDE_YUGO?'サイドユーゴ':'ユーゴ';
@@ -12,15 +12,16 @@ const CHOICE_LABELS=SIDE_YUGO?(MIRRORED?['① 左3枚目が出なければ\n→ 
 class CourtView extends window.PovView {
   constructor(player){
     super(player,{pos:'RB',canvas:document.createElement('canvas'),minimap:$('court'),callout:$('callout'),stopBox:$('stopBox'),format:s=>s});
-    this.canvas=$('scene');this.learning=true;this.yawOffset=0;this.pitchOffset=0;this.wide=false;
+    this.canvas=$('scene');this.learning=true;this.yawOffset=0;this.pitchOffset=0;this.wide=false;this.overview=SIDE_YUGO;
     this.renderer=new T.WebGLRenderer({canvas:this.canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
     this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;
     this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.0;
     this.scene=new T.Scene();this.camera=new T.PerspectiveCamera(70,1,.06,90);this.scene.add(this.camera);
     buildGym(this.scene,this.renderer);this.athletes={};this.labels={};
     Object.entries(player.data.players).forEach(([id,p],i)=>{
-      if(id==='RB')return;
+      if(id==='RB'&&!SIDE_YUGO)return;
       this.athletes[id]=makeAthlete(this.scene,id,p.team==='df',i);
+      if(id==='RB')return;
       const label=document.createElement('span');label.className='player-label'+(p.team==='df'?' df':'');$('labels').append(label);this.labels[id]=label;
     });
     this.ball=makeBall(this.scene);this.hands=makeHands(this.camera);
@@ -69,7 +70,7 @@ class CourtView extends window.PovView {
   drawMini(st){
     const c=this.cam,R=9,M=E.M,a=Math.atan2(c.fw.y,c.fw.x);let d=`M ${c.x*M} ${c.y*M}`;
     for(let i=0;i<=18;i++){const b=a-this.hfov/2+this.hfov*i/18;d+=` L ${(c.x+R*Math.cos(b))*M} ${(c.y+R*Math.sin(b))*M}`;}
-    this.fov.innerHTML=`<path d="${d} Z" fill="#d7f26666" stroke="#859735" stroke-width="4"/><circle cx="${c.x*M}" cy="${c.y*M}" r="43" fill="none" stroke="#1b4d41" stroke-width="10"/>`;
+    this.fov.innerHTML=`<path d="${d} Z" fill="#d7f26666" stroke="#859735" stroke-width="4"/><circle cx="${st.pos.RB.x*M}" cy="${st.pos.RB.y*M}" r="43" fill="none" stroke="#1b4d41" stroke-width="10"/>`;
   }
   draw(st,t){
     if(!this.renderer)return;
@@ -90,6 +91,7 @@ class CourtView extends window.PovView {
     const previous=E.stateAt(this.p.seq.start,actions,Math.max(0,t-.06));
     const future=E.stateAt(this.p.seq.start,actions,Math.min(this.p.total,t+.06));
     for(const [id,model] of Object.entries(this.athletes)){
+      model.root.visible=id!=='RB'||this.overview;
       const q=st.pos[id],a=previous.pos[id],b=future.pos[id],mx=b.x-a.x,mz=b.y-a.y;
       const speed=Math.hypot(mx,mz)/Math.max(.001,Math.min(this.p.total,t+.06)-Math.max(0,t-.06));
       const moving=speed>.05;
@@ -117,8 +119,8 @@ class CourtView extends window.PovView {
       if(((action.type==='pass'&&action.from==='RB')||(action.type==='shoot'&&action.who==='RB'))&&t>=action.t-.28&&t<action.t+.22)release={u:clamp((t-action.t+.28)/.5,0,1)};
       if(action.type==='pass'&&action.to==='RB'){const arrival=action.t+action.dur;if(t>=arrival-.25&&t<arrival+.2)catching=Math.sin(clamp((t-arrival+.25)/.45,0,1)*Math.PI);}
     }
-    this.hands.visible=ownBall||!!release||catching>0;
-    this.hands.userData.ball.visible=ownBall;
+    this.hands.visible=!this.overview&&(ownBall||!!release||catching>0);
+    this.hands.userData.ball.visible=ownBall&&!this.overview;
     this.hands.position.set(0,-.32+catching*.045,-.65-catching*.06);
     this.hands.rotation.set(0,0,0);
     if(release){const wind=Math.sin(Math.min(release.u/.56,1)*Math.PI/2),follow=T.MathUtils.smoothstep(release.u,.56,1);this.hands.position.x=.07*wind;this.hands.position.y+=.08*wind-.12*follow;this.hands.position.z+=.08*wind-.22*follow;this.hands.rotation.x=-.16*wind+.25*follow;this.hands.rotation.z=-.1*wind;}
@@ -127,7 +129,7 @@ class CourtView extends window.PovView {
       this.hands.position.y+=.18*lift;this.hands.position.z-=.08*lift;this.hands.rotation.x=-.2*lift;
     }
     let handBlend=0;
-    this.ball.visible=!ownBall&&(!!st.ballPos||!!st.holder);
+    this.ball.visible=(this.overview||!ownBall)&&(!!st.ballPos||!!st.holder);
     if(this.ball.visible){
       const inFlight=!!st.ballPos&&!fakeAction;
       const q=inFlight?st.ballPos:st.pos[st.holder];let x=q.x,z=q.y,height=inFlight?st.ballZ:1.15;
@@ -136,7 +138,7 @@ class CourtView extends window.PovView {
       // Keep the tactical state unchanged; only connect the visible catch/release to the hands.
       const handAction=actions.find(a=>t>=a.t&&t<a.t+a.dur&&((a.type==='pass'&&(a.to==='RB'||a.from==='RB'))||(a.type==='shoot'&&a.who==='RB')));
       const distance=Math.hypot(x-me.x,z-me.y);
-      if(handAction&&distance<1){
+      if(handAction&&distance<1&&!this.overview){
         handBlend=T.MathUtils.smoothstep(1-distance,0,1);
         const target=handAction.type==='shoot'?E.GOAL:st.pos[handAction.from==='RB'?handAction.to:handAction.from];
         const vx=distance>1e-6?x-me.x:target.x-me.x,vz=distance>1e-6?z-me.y:target.y-me.y;
@@ -145,6 +147,16 @@ class CourtView extends window.PovView {
       }
       this.ball.position.set(x,height,z);this.ball.rotation.set(t*2,t*3,0);
     }
+    if(this.overview){
+      const hand=this.athletes.RB.limbs[1].hand;
+      hand.updateWorldMatrix(true,false);
+      const held=hand.getWorldPosition(new T.Vector3());held.y+=.08;
+      if(ownBall)this.ball.position.copy(held);
+      else if(this.ball.visible){
+        const transfer=actions.find(a=>t>=a.t&&t<a.t+a.dur&&((a.type==='pass'&&(a.from==='RB'||a.to==='RB'))||(a.type==='shoot'&&a.who==='RB')));
+        if(transfer){const u=(t-transfer.t)/transfer.dur,near=transfer.to==='RB'?u:1-u;this.ball.position.lerp(held,T.MathUtils.smoothstep(near,.75,1));}
+      }
+    }
     this.frameCamera(st,t);
     if(handBlend>0){
       this.hands.updateWorldMatrix(true,true);
@@ -152,15 +164,17 @@ class CourtView extends window.PovView {
       this.ball.position.lerp(target,handBlend);this.hands.visible=true;
     }
     this.updateLabels(st,looks);this.drawMini(st);this.drawCallout(cue);
-    $('shot').hidden=!st.shotDone;$('viewStatus').textContent=Math.abs(this.yawOffset)+Math.abs(this.pitchOffset)>.02?'RB目線 · 見回し中':'RB目線 · 自動視線';
+    $('shot').hidden=!st.shotDone;$('viewStatus').textContent=(this.overview?'RB後方 · ':'RB目線 · ')+(Math.abs(this.yawOffset)+Math.abs(this.pitchOffset)>.02?'見回し中':'自動視線');
     this.renderer.render(this.scene,this.camera);this.sound?.update(st,t,this.p);
   }
   frameCamera(st,t){
     const me=st.pos.RB,eye=new T.Vector3(me.x,1.6,me.y);
-    const fw=this.forwardAt(t),preferred=Math.atan2(fw.y,fw.x);
-    const baseHFov=T.MathUtils.degToRad(this.wide?115:96),margin=.82;
+    const goalDirection=new T.Vector3(me.x-E.GOAL.x,0,me.y-E.GOAL.y).normalize();
+    if(this.overview)eye.addScaledVector(goalDirection,3.6).setY(3.6);
+    const fw=this.forwardAt(t),preferred=this.overview?Math.atan2(E.GOAL.y-eye.z,E.GOAL.x-eye.x):Math.atan2(fw.y,fw.x);
+    const baseHFov=T.MathUtils.degToRad(this.wide?115:this.overview?(this.camera.aspect<1?76:106):96),margin=.82;
     const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
-    const goalAngle=Math.atan2(E.GOAL.y-me.y,E.GOAL.x-me.x);
+    const goalAngle=Math.atan2(E.GOAL.y-eye.z,E.GOAL.x-eye.x);
     // Frame the full goal and the rendered ball, including its radius. Apply this
     // AFTER cue smoothing: the inherited 2D view assumes a different field of view.
     const points=[];
@@ -172,7 +186,13 @@ class CourtView extends window.PovView {
         const p=center.clone();p[axis]+=.14*sign;points.push(p);
       }
     }
-    const bearingPoints=points.slice(0,4);if(this.ball.visible)bearingPoints.push(this.ball.position);
+    if(this.overview){
+      // Keep the nearby attacking line and defensive line in the same frame.
+      for(const q of Object.values(st.pos))if(q.y<=me.y+1&&Math.hypot(q.x-me.x,q.y-me.y)<6){
+        points.push(new T.Vector3(q.x,0,q.y),new T.Vector3(q.x,1.9,q.y));
+      }
+    }
+    const bearingPoints=this.overview?[...points]:points.slice(0,4);if(this.ball.visible)bearingPoints.push(this.ball.position);
     const bearings=bearingPoints.map(p=>wrap(Math.atan2(p.z-eye.z,p.x-eye.x)-goalAngle));
     const lo=Math.min(...bearings),hi=Math.max(...bearings);
     const safeHalf=Math.atan(Math.tan(baseHFov/2)*margin);
@@ -182,7 +202,7 @@ class CourtView extends window.PovView {
     const bottom=Math.min(...elevations),top=Math.max(...elevations);
     const vHalf=Math.atan(Math.tan(baseHFov/2)/this.camera.aspect*margin);
     const vMiddle=(bottom+top)/2,vFreedom=Math.max(0,vHalf-(top-bottom)/2);
-    const pitch=clamp(-.07,vMiddle-vFreedom,vMiddle+vFreedom);
+    const pitch=clamp(this.overview?-.48:-.07,vMiddle-vFreedom,vMiddle+vFreedom);
     const aim=(a,p)=>{
       this.camera.position.copy(eye);
       this.camera.lookAt(eye.x+Math.cos(a)*Math.cos(p),eye.y+Math.sin(p),eye.z+Math.sin(a)*Math.cos(p));
@@ -200,7 +220,7 @@ class CourtView extends window.PovView {
     // Manual looking remains available; reset restores automatic framing.
     const angle=yaw+this.yawOffset;
     aim(angle,pitch+this.pitchOffset);
-    this.cam={x:me.x,y:me.y,fw:{x:Math.cos(angle),y:Math.sin(angle)},rt:{x:-Math.sin(angle),y:Math.cos(angle)}};
+    this.cam={x:eye.x,y:eye.z,fw:{x:Math.cos(angle),y:Math.sin(angle)},rt:{x:-Math.sin(angle),y:Math.cos(angle)}};
   }
   updateLabels(st,looks){
     const edges={left:0,right:0},placed=[];
@@ -281,12 +301,14 @@ function updateUI(){
   $('sceneStep').textContent=`0${player.stepIndex+1} / 0${STEP_NAMES.length}`;
   $('modeName').textContent=view?.learning===false?'体験':'学習';
   $('seek').value=player.total?Math.round(player.t/player.total*1000):0;
-  $('time').textContent=`${player.t.toFixed(1)} / ${player.total.toFixed(1)}秒`;
+  $('seek').disabled=player.total===0;
+  $('time').textContent=player.total===0?'受球直後 · 判断待ち':`${player.t.toFixed(1)} / ${player.total.toFixed(1)}秒`;
   document.querySelectorAll('#steps button').forEach((b,i)=>{b.classList.toggle('active',i===player.stepIndex);b.setAttribute('aria-current',i===player.stepIndex?'step':'false');});
   if(view&&!changing&&!view.stopped&&player.t>=player.total&&terminalSeen!==player.seq){
     terminalSeen=player.seq;
     if(player.branch){pausePlayback();$('resultText').textContent=player.branch.label;showPanel('resultPanel');}
     else if(player.stepIndex===CHOICE_STEP){pausePlayback();showPanel('choicePanel');}
+    else if(SIDE_YUGO&&MIRRORED&&player.stepIndex===CHOICE_STEP-1){showChoices();}
   }
 }
 function renderPanel(){
@@ -308,10 +330,10 @@ function changeStep(i,play=false){
 try{
   const data=MIRRORED?mirrorTactic(window.TACTICS[TACTIC_ID],E.CW):structuredClone(window.TACTICS[TACTIC_ID]);data.steps=data.steps.slice(0,STEP_NAMES.length);data.steps.forEach((s,i)=>{if(i!==CHOICE_STEP)s.branches=[];});
   if(SIDE_YUGO&&MIRRORED){
-    // Pause before the main line hands off to LB; the four alternatives replay
-    // the original decision from its own `from` point without changing its data.
-    data.steps[CHOICE_STEP].actions=data.steps[CHOICE_STEP].actions.filter(a=>a.t<1.9);
-    data.steps[CHOICE_STEP].pov.RB.cues=data.steps[CHOICE_STEP].pov.RB.cues.filter(c=>c.t<1.9);
+    // Receive completes at 2.6s; the preceding step ends at 3.0s.
+    // All alternatives start at this neutral state (from: 0), before L3 reacts.
+    data.steps[CHOICE_STEP].actions=[];
+    data.steps[CHOICE_STEP].pov.RB.cues=[];
   }
   document.body.classList.toggle('mirrored',MIRRORED);
   document.body.classList.toggle('side-yugo',SIDE_YUGO);
@@ -362,6 +384,8 @@ try{
   $('learn').onclick=()=>view.setLearning(true);$('experience').onclick=()=>view.setLearning(false);
   $('resetView').onclick=()=>{view.yawOffset=0;view.pitchOffset=0;view.redraw();};
   $('wide').onclick=()=>{view.wide=!view.wide;$('wide').setAttribute('aria-pressed',String(view.wide));$('wide').textContent=view.wide?'標準の視野':'広い視野';view.resize();view.redraw();};
+  $('overview').hidden=!SIDE_YUGO;
+  $('overview').onclick=()=>{view.overview=!view.overview;$('overview').setAttribute('aria-pressed',String(view.overview));$('overview').textContent=view.overview?'視点：引いて全体':'視点：本人目線';view.yawOffset=0;view.pitchOffset=0;view.redraw();};
   $('sound').onclick=async()=>{try{const enabled=await view.sound.toggle();$('sound').textContent=enabled?'音 ON':'音 OFF';$('sound').setAttribute('aria-pressed',String(enabled));}catch{$('sound').textContent='音を使えません';}};
   document.addEventListener('visibilitychange',()=>{if(document.hidden){pausePlayback();view.sound.previous=null;updateUI();}});
   renderPanel();
