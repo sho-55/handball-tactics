@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#153d38">
   <title>ユーゴ・RB目線 3D試作 | ハンド動き解説</title>
-  <link rel="stylesheet" href="css/pov-3d.css?v=202609200641">
+  <link rel="stylesheet" href="css/pov-3d.css?v=202609200658">
 </head>
 <body>
   <header class="page-head"><a href="./">← アプリの一覧へ</a><span class="lab">3D テスト版</span></header>
@@ -15,7 +15,7 @@
       <div class="hud"><span id="viewStatus">RB目線 · 自動視線</span><span id="sceneStep">01 / 04</span></div>
       <div id="labels" aria-hidden="true"></div>
       <div class="mini"><svg id="court" aria-label="上から見た選手配置"></svg></div>
-      <div class="scene-tools"><button id="resetView">視線を戻す</button><button id="basicPlay" hidden>基本のブロック</button><button id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel">設定</button></div>
+      <div class="scene-tools"><button id="resetView">視線を戻す</button><button id="basicPlay" hidden>基本を通して見る</button><button id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel">設定</button></div>
       <button id="stopBox" class="stop-box" hidden></button>
       <div id="shot" class="shot" hidden>シュート！</div>
       <section id="choicePanel" class="overlay-panel" aria-labelledby="choiceTitle" hidden>
@@ -24,7 +24,7 @@
       </section>
       <section id="resultPanel" class="overlay-panel" aria-labelledby="resultTitle" hidden>
         <div class="panel-heading"><h2 id="resultTitle">プレー終了</h2><button id="closeResult">閉じる</button></div>
-        <p id="resultText"></p><div class="result-actions"><button id="tryOther">別の選択を試す</button><button id="again">もう一度</button><button id="startOver">最初から</button></div>
+        <p id="resultText"></p><div class="result-actions"><button id="explainPlay" hidden>ブロックを段階解説</button><button id="tryOther">別の選択を試す</button><button id="again">もう一度</button><button id="startOver">最初から</button></div>
       </section>
       <section id="settingsPanel" class="overlay-panel settings-panel" aria-labelledby="settingsTitle" hidden>
         <div class="panel-heading"><h2 id="settingsTitle">設定・場面を選ぶ</h2><button id="closeSettings">閉じる</button></div>
@@ -43,13 +43,13 @@
       <div id="loading" role="status">体育館を準備しています…</div>
     </section>
   </main>
-  <script src="js/engine.js?v=202609200641"></script>
-  <script src="js/pov.js?v=202609200641"></script>
-  <script src="tactics/05-yugo.js?v=202609200641"></script>
-  <script src="tactics/06-side-yugo.js?v=202609200641"></script>
-  <script src="tactics/07-center-side.js?v=202609200641"></script>
+  <script src="js/engine.js?v=202609200658"></script>
+  <script src="js/pov.js?v=202609200658"></script>
+  <script src="tactics/05-yugo.js?v=202609200658"></script>
+  <script src="tactics/06-side-yugo.js?v=202609200658"></script>
+  <script src="tactics/07-center-side.js?v=202609200658"></script>
   <script type="module">
-    import('./js/pov-3d.js?v=202609200641').catch(() => {
+    import('./js/pov-3d.js?v=202609200658').catch(() => {
       const box = document.getElementById('loading');
       box.replaceChildren(document.createTextNode('3Dを読み込めませんでした。ページを再読み込みするか、'));
       const a = document.createElement('a'); a.href = 'pov.html?id=' + (['06','07'].includes(new URLSearchParams(location.search).get('id')) ? new URLSearchParams(location.search).get('id') : '05') + '&pos=RB' + (new URLSearchParams(location.search).get('mirror') === '1' ? '&mirror=1' : ''); a.textContent = '元のRB目線を開く'; box.append(a);

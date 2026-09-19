@@ -1,7 +1,7 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609200641';
-import {makeScreenLesson} from './screen-lesson.js?v=202609200641';
-import {centerSidePov} from './pov-center-side.js?v=202609200641';
-import {mirrorTactic} from './mirror-tactic.js?v=202609200641';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609200658';
+import {makeScreenLesson} from './screen-lesson.js?v=202609200658';
+import {centerSidePov} from './pov-center-side.js?v=202609200658';
+import {mirrorTactic} from './mirror-tactic.js?v=202609200658';
 const PARAMS=new URLSearchParams(location.search),MIRRORED=PARAMS.get('mirror')==='1';
 const TACTIC_ID=['06','07'].includes(PARAMS.get('id'))?PARAMS.get('id'):'05',SIDE_YUGO=TACTIC_ID==='06',CENTER_SIDE=TACTIC_ID==='07';
 const TACTIC_NAME=CENTER_SIDE?'センターサイド':SIDE_YUGO?'サイドユーゴ':'ユーゴ';
@@ -77,6 +77,10 @@ class CourtView extends window.PovView {
       else this.pitchOffset=clamp(this.pitchOffset+(e.key==='ArrowUp'?.1:-.1),-.55,.55);
       this.redraw();
     });
+  }
+  cuesOf(node){
+    const cues=super.cuesOf(node);
+    return CENTER_SIDE&&!this.lessonBreaks?cues.map(c=>({...c,stop:false})):cues;
   }
   onRender(st,t){
     super.onRender(st,t);
@@ -284,7 +288,7 @@ class CourtView extends window.PovView {
       if(outside){const right=rx*this.cam.rt.x+rz*this.cam.rt.y>=0;const side=right?'right':'left';x=right?this.W-32:32;y=this.H*.42+edges[side]++*28;label.textContent=right?`${this.label(id)} →`:`← ${this.label(id)}`;}
       else {
         const lesson=this.p.branch?.screenLesson,active=lesson&&this.p.t>=lesson.start&&this.p.t<=lesson.end;
-        label.textContent=active&&id===lesson.blocker?`${id==='RB'?'自分RB':id}：${this.label(lesson.defender)}をブロック`:active&&id===lesson.defender?`止める：${this.label(id)}`:active&&id===lesson.shooter?`${id==='RB'?'自分RB':id}：ロング`:id==='RB'?'自分RB':(attention?'見る · ':'')+this.label(id);
+        label.textContent=active&&id===lesson.blocker?`${id==='RB'?'自分RB':id}：${this.label(lesson.defender)}をブロック`:active&&id===lesson.defender?`${this.p.t<lesson.contact-1e-8?'追う':'止まる'}：${this.label(id)}`:active&&id===lesson.shooter?`${id==='RB'?'自分RB':id}：ロング`:id==='RB'?'自分RB':(attention?'見る · ':'')+this.label(id);
       }
       const half=label.offsetWidth/2;
       x=clamp(x,half+6,this.W-half-6);y=Math.max(label.offsetHeight+8,y);
@@ -344,7 +348,8 @@ function showChoices(){
   player.gotoStep(CHOICE_STEP,false);player.t=player.total;player.render();
   terminalSeen=player.seq;changing=false;renderPanel();showPanel('choicePanel');
 }
-function startBranch(branch){
+function startBranch(branch,explain=false){
+  if(CENTER_SIDE){view.lessonBreaks=explain;view.clearStop();}
   hidePanels();view.yawOffset=0;view.pitchOffset=0;terminalSeen=null;
   player.playBranch(branch);renderPanel();
 }
@@ -429,7 +434,10 @@ try{
   $('next').onclick=()=>{hidePanels();if(view.stopped)view.resume();else if(player.stepIndex===CHOICE_STEP)showChoices();else changeStep(player.stepIndex+1);};
   $('choose').onclick=showChoices;
   $('basicPlay').hidden=!CENTER_SIDE;
-  $('basicPlay').onclick=()=>{changing=true;pausePlayback();view.clearStop();player.gotoStep(CHOICE_STEP,false);changing=false;startBranch(player.step.branches.find(b=>b.basic));};
+  const basicLesson=explain=>{changing=true;pausePlayback();view.clearStop();player.gotoStep(CHOICE_STEP,false);changing=false;const basic=player.step.branches.find(b=>b.basic);if(explain)view.setLearning(true);startBranch(MIRRORED?{...basic,playFrom:0,from:0}:basic,explain);};
+  $('basicPlay').onclick=()=>basicLesson(false);
+  $('explainPlay').hidden=!CENTER_SIDE;
+  $('explainPlay').onclick=()=>basicLesson(true);
   const restart=()=>{view.yawOffset=0;view.pitchOffset=0;changeStep(0,true);};
   $('restartAlways').onclick=restart;$('restart').onclick=restart;$('startOver').onclick=restart;
   $('tryOther').onclick=showChoices;

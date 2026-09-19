@@ -81,7 +81,7 @@ async def main():
     print(engine,mirror,result,flush=True)
     await p.reload();await p.wait_for_function('!!window.court3d');await p.evaluate('player.speed=1.5')
     await p.locator('#restartAlways').tap();await finish(p)
-    assert await p.evaluate('!player.branch&&Math.abs(player.t-(player.data.id==="07"&&player.data.steps.length===3?.8:1.5))<1e-8')
+    assert await p.evaluate('!player.branch&&Math.abs(player.t-1.5)<1e-8')
     count=4 if mirror else 5
     for k in range(count):
      await p.locator('#branches button').nth(k).tap();await finish(p)
