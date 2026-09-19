@@ -1,6 +1,7 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609200613';
-import {centerSidePov} from './pov-center-side.js?v=202609200613';
-import {mirrorTactic} from './mirror-tactic.js?v=202609200613';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609200641';
+import {makeScreenLesson} from './screen-lesson.js?v=202609200641';
+import {centerSidePov} from './pov-center-side.js?v=202609200641';
+import {mirrorTactic} from './mirror-tactic.js?v=202609200641';
 const PARAMS=new URLSearchParams(location.search),MIRRORED=PARAMS.get('mirror')==='1';
 const TACTIC_ID=['06','07'].includes(PARAMS.get('id'))?PARAMS.get('id'):'05',SIDE_YUGO=TACTIC_ID==='06',CENTER_SIDE=TACTIC_ID==='07';
 const TACTIC_NAME=CENTER_SIDE?'センターサイド':SIDE_YUGO?'サイドユーゴ':'ユーゴ';
@@ -41,10 +42,10 @@ class CourtView extends window.PovView {
     Object.entries(player.data.players).forEach(([id,p],i)=>{
       if(id==='RB'&&!SIDE_YUGO&&!CENTER_SIDE)return;
       this.athletes[id]=makeAthlete(this.scene,id,p.team==='df',i);
-      if(id==='RB')return;
+      if(id==='RB'&&!CENTER_SIDE)return;
       const label=document.createElement('span');label.className='player-label'+(p.team==='df'?' df':'');$('labels').append(label);this.labels[id]=label;
     });
-    this.ball=makeBall(this.scene);this.hands=makeHands(this.camera);
+    this.ball=makeBall(this.scene);this.hands=makeHands(this.camera);this.screenGuide=makeScreenLesson(T,this.scene);
     this.sound=new CourtSound();this.bindLook();this.resize();this.redraw();
     this.resizeObserver=new ResizeObserver(()=>{this.resize();this.redraw();});this.resizeObserver.observe(this.canvas.parentElement);
     this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();player.pause();$('loading').hidden=false;$('loading').textContent='3D描画が中断しました。ページを再読み込みしてください。';updateUI();});
@@ -134,10 +135,22 @@ class CourtView extends window.PovView {
       if(fakeAction?.from===id){
         throwing=.35*Math.sin((t-fakeAction.t)/fakeAction.dur*Math.PI);target=st.pos[fakeAction.to];
       }
+      let blocking=0;
+      const lesson=this.p.branch?.screenLesson;
+      if(CENTER_SIDE&&lesson&&id===lesson.blocker){
+        const last=actions.filter(a=>a.who===id&&['block','move'].includes(a.type)&&a.t<=t).sort((a,b)=>b.t-a.t)[0];
+        if(last?.type==='block'&&st.holder!==id){
+          const begin=E.stateAt(this.p.seq.start,actions,last.t).pos[id],end=last.to.at(-1);
+          blocking=Math.hypot(begin.x-end[0],begin.y-end[1])<.01?1:T.MathUtils.smoothstep(t,last.t+last.dur-.25,last.t+last.dur);
+          const face={x:MIRRORED?11.6:8.4,y:9.4};
+          target={x:target.x+(face.x-target.x)*blocking,y:target.y+(face.y-target.y)*blocking};
+        }
+      }
+      model.blocking=blocking;
       model.root.position.set(q.x,0,q.y);model.root.rotation.y=Math.atan2(target.x-q.x,target.y-q.y);
       let distance=0,acceleration=0;for(const track of this.motionTracks[id]||[]){const u=clamp((t-track.t)/track.dur,0,1),e=u<.5?2*u*u:-1+(4-2*u)*u;distance+=track.length*e;if(u>0&&u<1)acceleration+=4*track.length/(track.dur*track.dur)*(1-2*T.MathUtils.smoothstep(u,.38,.62));}
       const yaw=model.root.rotation.y,lateral=model.def&&moving?clamp((mx*Math.cos(yaw)-mz*Math.sin(yaw))/(Math.hypot(mx,mz)||1),-1,1):0;
-      poseAthlete(model,{speed,phase:distance*5.2+model.phaseOffset,holding:st.holder===id,throwing,receiving,acceleration,lateral,shooting});
+      poseAthlete(model,{speed,phase:distance*5.2+model.phaseOffset,holding:st.holder===id,throwing,receiving,acceleration,lateral,shooting,blocking});
       model.ring.visible=this.learning&&(looks.has(id)||st.holder===id);
     }
     const ownBall=st.holder==='RB'&&(!st.ballPos||fakeAction?.from==='RB')&&!st.shotDone;
@@ -190,6 +203,7 @@ class CourtView extends window.PovView {
       const target=this.hands.userData.ball.getWorldPosition(new T.Vector3());
       this.ball.position.lerp(target,handBlend);this.hands.visible=true;
     }
+    this.screenGuide.update(st,t,this.p.branch?.screenLesson,this.learning);
     this.updateLabels(st,looks);this.drawMini(st);this.drawCallout(cue);
     $('shot').hidden=!st.shotDone;$('viewStatus').textContent=(this.overview?'RB後方 · ':'RB目線 · ')+(Math.abs(this.yawOffset)+Math.abs(this.pitchOffset)>.02?'見回し中':'自動視線');
     this.renderer.render(this.scene,this.camera);this.sound?.update(st,t,this.p);
@@ -198,8 +212,11 @@ class CourtView extends window.PovView {
     const me=st.pos.RB,eye=new T.Vector3(me.x,1.6,me.y);
     const goalDirection=new T.Vector3(me.x-E.GOAL.x,0,me.y-E.GOAL.y).normalize();
     if(this.overview)eye.addScaledVector(goalDirection,CENTER?.view.back??3.6).setY(CENTER?.view.height??3.6);
+    const lesson=this.p.branch?.screenLesson;
+    const focus=this.overview&&lesson?T.MathUtils.smoothstep(t,Math.max(lesson.start,this.p.branch.playFrom??0),lesson.arrive):0;
+    if(focus&&!MIRRORED)eye.lerp(new T.Vector3(me.x+1.8,3.8,me.y+6),focus);
     const fw=this.forwardAt(t),preferred=this.overview?Math.atan2(E.GOAL.y-eye.z,E.GOAL.x-eye.x):Math.atan2(fw.y,fw.x);
-    const baseHFov=T.MathUtils.degToRad(this.wide?115:this.overview?(this.camera.aspect<1?76:106):96),margin=.82;
+    const baseHFov=T.MathUtils.degToRad(this.wide?115:this.overview?T.MathUtils.lerp(this.camera.aspect<1?76:106,this.camera.aspect<1?62:82,focus):96),margin=.82;
     const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
     const goalAngle=Math.atan2(E.GOAL.y-eye.z,E.GOAL.x-eye.x);
     // Frame the full goal and the rendered ball, including its radius. Apply this
@@ -215,8 +232,12 @@ class CourtView extends window.PovView {
     }
     if(this.overview){
       // Keep the nearby attacking line and defensive line in the same frame.
-      for(const q of Object.values(st.pos))if(q.y<=me.y+1&&Math.hypot(q.x-me.x,q.y-me.y)<6){
-        points.push(new T.Vector3(q.x,0,q.y),new T.Vector3(q.x,1.9,q.y));
+      for(const [id,q] of Object.entries(st.pos)){
+        const key=lesson&&[lesson.blocker,lesson.defender,lesson.shooter].includes(id);
+        if(key||q.y<=me.y+1&&Math.hypot(q.x-me.x,q.y-me.y)<6){
+          const f=key?0:focus,x=q.x+(me.x-q.x)*f,z=q.y+(me.y-q.y)*f;
+          points.push(new T.Vector3(x,0,z),new T.Vector3(x,1.9,z));
+        }
       }
     }
     const bearingPoints=this.overview?[...points]:points.slice(0,4);if(this.ball.visible)bearingPoints.push(this.ball.position);
@@ -256,14 +277,22 @@ class CourtView extends window.PovView {
       const p=st.pos[id],v=new T.Vector3(p.x,1.92,p.y).project(this.camera);
       const rx=p.x-this.cam.x,rz=p.y-this.cam.y,depth=rx*this.cam.fw.x+rz*this.cam.fw.y;
       const attention=looks.has(id),outside=depth<.1||Math.abs(v.x)>.93||Math.abs(v.y)>.91;
-      label.hidden=!this.learning||(!attention&&st.holder!==id&&(outside||Math.hypot(rx,rz)>6));
+      label.hidden=(id==='RB'&&!this.overview)||!this.learning||(!attention&&st.holder!==id&&(outside||Math.hypot(rx,rz)>6));
       label.classList.toggle('attention',attention);label.classList.toggle('edge',outside);
       if(label.hidden)continue;
       let x=(v.x+1)*this.W/2,y=(1-v.y)*this.H/2;
       if(outside){const right=rx*this.cam.rt.x+rz*this.cam.rt.y>=0;const side=right?'right':'left';x=right?this.W-32:32;y=this.H*.42+edges[side]++*28;label.textContent=right?`${this.label(id)} →`:`← ${this.label(id)}`;}
-      else label.textContent=(attention?'見る · ':'')+this.label(id);
+      else {
+        const lesson=this.p.branch?.screenLesson,active=lesson&&this.p.t>=lesson.start&&this.p.t<=lesson.end;
+        label.textContent=active&&id===lesson.blocker?`${id==='RB'?'自分RB':id}：${this.label(lesson.defender)}をブロック`:active&&id===lesson.defender?`止める：${this.label(id)}`:active&&id===lesson.shooter?`${id==='RB'?'自分RB':id}：ロング`:id==='RB'?'自分RB':(attention?'見る · ':'')+this.label(id);
+      }
+      const half=label.offsetWidth/2;
+      x=clamp(x,half+6,this.W-half-6);y=Math.max(label.offsetHeight+8,y);
+      const mini=$('court').closest('.mini').getBoundingClientRect(),canvas=this.canvas.getBoundingClientRect();
+      const underMap=()=>x+half>mini.left-canvas.left&&x-half<mini.right-canvas.left&&y>mini.top-canvas.top&&y-label.offsetHeight<mini.bottom-canvas.top;
+      if(underMap())y=mini.bottom-canvas.top+label.offsetHeight+8;
       const overlaps=()=>placed.some(p=>Math.abs(p.x-x)<64&&Math.abs(p.y-y)<23);
-      if(overlaps()){if(!attention){label.hidden=true;continue;}while(overlaps())y-=25;}
+      if(overlaps()){if(!attention){label.hidden=true;continue;}while(overlaps())y-=25;if(underMap()){y=mini.bottom-canvas.top+label.offsetHeight+8;while(overlaps())y+=25;}}
       placed.push({x,y});
       label.style.left=x+'px';label.style.top=y+'px';
     }
@@ -344,9 +373,9 @@ function renderPanel(){
   $('stepTitle').textContent=player.branch?player.branch.label:STEP_NAMES[player.stepIndex]+' · '+player.step.title;
   // Rebuild only when the branch changes, never for every animation frame.
   const b=$('branches');b.replaceChildren();
-  for(const [i,branch] of player.data.steps[CHOICE_STEP].branches.entries()){
+  for(const [i,branch] of [...player.data.steps[CHOICE_STEP].branches.entries()].sort((a,b)=>Number(!!b[1].basic)-Number(!!a[1].basic))){
     const button=document.createElement('button');button.textContent=CHOICE_LABELS[i];
-    button.classList.toggle('active',player.branch===branch);button.onclick=()=>startBranch(branch);b.append(button);
+    button.classList.toggle('basic-route',!!branch.basic);button.classList.toggle('active',player.branch===branch);button.onclick=()=>startBranch(branch);b.append(button);
   }
   updateUI();
 }
@@ -399,6 +428,8 @@ try{
   $('prev').onclick=()=>changeStep(player.branch?player.stepIndex:Math.max(0,player.stepIndex-1));
   $('next').onclick=()=>{hidePanels();if(view.stopped)view.resume();else if(player.stepIndex===CHOICE_STEP)showChoices();else changeStep(player.stepIndex+1);};
   $('choose').onclick=showChoices;
+  $('basicPlay').hidden=!CENTER_SIDE;
+  $('basicPlay').onclick=()=>{changing=true;pausePlayback();view.clearStop();player.gotoStep(CHOICE_STEP,false);changing=false;startBranch(player.step.branches.find(b=>b.basic));};
   const restart=()=>{view.yawOffset=0;view.pitchOffset=0;changeStep(0,true);};
   $('restartAlways').onclick=restart;$('restart').onclick=restart;$('startOver').onclick=restart;
   $('tryOther').onclick=showChoices;

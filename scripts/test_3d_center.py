@@ -37,14 +37,21 @@ async def main():
       }
       if(st.holder!==map(oracle.holder)||st.shotDone!==oracle.shotDone)throw Error('state differs');
       const camera=court3d.camera,me=st.pos.RB;
-      if(Math.abs(Math.hypot(camera.position.x-me.x,camera.position.z-me.y)-(mirror?3.6:5))>1e-8||camera.position.y!==3.6)throw Error('RB follow position');
+      const lesson=player.branch?.screenLesson,focus=lesson?T.MathUtils.smoothstep(player.t,Math.max(lesson.start,player.branch.playFrom??0),lesson.arrive):0;
+      const eye=new T.Vector3(me.x,3.6,me.y),back=new T.Vector3(me.x-10,0,me.y).normalize();eye.addScaledVector(back,mirror?3.6:5);
+      if(focus&&!mirror)eye.lerp(new T.Vector3(me.x+1.8,3.8,me.y+6),focus);
+      if(camera.position.distanceTo(eye)>1e-8)throw Error('lesson camera');
       const points=[];for(const x of [8.45,11.55])for(const y of [0,2.05])points.push(new T.Vector3(x,y,0));
       if(court3d.ball.visible)points.push(court3d.ball.position.clone());
       for(const q of points){const v=q.project(camera);maxExtent=Math.max(maxExtent,Math.abs(v.x),Math.abs(v.y));if(v.z>1||v.z< -1||Math.abs(v.x)>.86||Math.abs(v.y)>.86)throw Error(JSON.stringify({t:player.t,step:player.stepIndex,branch:player.branch?.label,v}));}
       if(court3d.hands.visible||court3d.hands.userData.ball.visible)throw Error('first-person hands obscure overview');
       if(st.holder==='RB'&&!st.shotDone){
        let visible=0;for(const[id,q]of Object.entries(st.pos)){if(id==='RB')continue;const a=new T.Vector3(q.x,0,q.y).project(camera),b=new T.Vector3(q.x,1.9,q.y).project(camera);if(Math.abs(b.x)<.98&&Math.abs(b.y)<.98&&b.z<1&&b.z> -1)visible++;if(player.data.players[id].team==='df')maxDefHeight=Math.max(maxDefHeight,Math.abs(b.y-a.y)/2);}
-       minVisible=Math.min(minVisible,visible);
+       if(focus===0)minVisible=Math.min(minVisible,visible);
+      }
+      if(lesson&&player.t>=lesson.start&&player.t<=lesson.end)for(const id of [lesson.blocker,lesson.defender,lesson.shooter]){
+       const q=st.pos[id],v=new T.Vector3(q.x,1.9,q.y).project(camera);
+       if(Math.abs(v.x)>.9||Math.abs(v.y)>.9||Math.abs(v.z)>1)throw Error('screen role outside view: '+id);
       }
       samples++;
      };
@@ -97,7 +104,7 @@ async def main():
     await p.locator('#restartAlways').tap();await finish(p)
     assert not await p.evaluate('!!court3d.stopped')
     # Actual branch button plus time sample: no artificial overlay in screenshots.
-    await p.locator('#branches button').last.tap();await p.evaluate('player.pause();player.t=player.branch.playFrom+2;player.render()')
+    await p.locator('#branches button.basic-route').tap();await p.evaluate('player.pause();court3d.clearStop();player.t=player.branch.screenLesson.arrive;player.render()')
     await p.set_viewport_size({'width':390,'height':844});await p.screenshot(path=str(OUT/f'{engine}-{mirror}-action.png'))
     await p.locator('#restartAlways').tap();assert await p.evaluate('player.stepIndex===0&&player.playing&&!player.branch')
     await p.emulate_media(reduced_motion='reduce');await p.reload();await p.wait_for_function('!!window.court3d')

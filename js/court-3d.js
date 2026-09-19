@@ -210,7 +210,7 @@ export function makeAthlete(scene,id,def,index){
   upper.position.y=1;for(const part of upper.children)part.position.y-=1;
   return {root,body,upper,limbs,ring,def,phaseOffset:index*.71};
 }
-export function poseAthlete(model,{speed,phase,holding,throwing,receiving,acceleration=0,lateral=0,shooting=false}){
+export function poseAthlete(model,{speed,phase,holding,throwing,receiving,acceleration=0,lateral=0,shooting=false,blocking=0}){
   const move=T.MathUtils.smoothstep(speed,.02,2.6),stride=Math.sin(phase)*.72*move;
   const crouch=model.def?1:0;
   model.body.position.y=0;
@@ -225,6 +225,13 @@ export function poseAthlete(model,{speed,phase,holding,throwing,receiving,accele
     l.elbow.rotation.x=-.35-move*.65;
     if(model.def){l.arm.rotation.x=-.55+side*stride*.18;l.elbow.rotation.x=-.95;}
     if(holding||receiving){l.arm.rotation.x=-.62;l.arm.rotation.z=side*.08;l.elbow.rotation.x=-1.0;}
+    if(blocking>0){
+      const mix=(a,b)=>T.MathUtils.lerp(a,b,blocking);
+      l.leg.rotation.x=mix(l.leg.rotation.x,-.1);l.leg.rotation.z=mix(l.leg.rotation.z,side*.17);
+      l.knee.rotation.x=mix(l.knee.rotation.x,.26);
+      l.arm.rotation.x=mix(l.arm.rotation.x,-.25);l.arm.rotation.z=mix(l.arm.rotation.z,side*.03);
+      l.elbow.rotation.x=mix(l.elbow.rotation.x,-1.25);
+    }
     if(throwing!==null){
       const wind=T.MathUtils.smoothstep(throwing,0,.32),release=T.MathUtils.smoothstep(throwing,.32,.46),settle=T.MathUtils.smoothstep(throwing,.65,1);
       model.upper.rotation.y=-.38*wind+.66*release-.28*settle;

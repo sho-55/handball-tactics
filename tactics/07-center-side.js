@@ -106,7 +106,7 @@ window.TACTICS["07"] = {
     // ---------------------------------------------------------------- (3)
     {
       title: "RBがLBへパスして左2/3にブロック。RWは右2枚目にブロック",
-      text: "RBはLBへパスし、左2枚目と左3枚目の間にインブロック。RWは少し遅れて右2枚目に立つだけのインブロック。LBは中へ切り込みながらロングの助走。",
+      text: "RBはLBへパスし、左2枚目と左3枚目の間にインブロック。RWは少し遅れて右2枚目に立つだけのインブロック。LBは中へ切り込みながらロングの助走。（推定：RBは左2枚目の内側で足を止める配置に調整。位置・間合いは指導者確認）",
       notes: [
         "RBは左2枚目にインブロック。",
         "RWは少し遅れて右2枚目に立つだけインブロック。※ブロッキング（反則）注意。",
@@ -115,7 +115,7 @@ window.TACTICS["07"] = {
       guides: [{ x: 8.4, y: 9.4, short: "9mで踏み切る", side: "below", label: "LBの踏み切り位置", sub: "9mライン上で思い切り踏み切って打ち切る。" }],
       actions: [
         { t: 0.0, dur: 0.7, type: "pass", from: "RB", to: "LB" },
-        { t: 0.8, dur: 1.0, type: "block", who: "RB", to: [[7.0, 7.3]] },
+        { t: 0.8, dur: 1.4, type: "block", who: "RB", to: [[6.1, 6.1]] },
         { t: 1.0, dur: 0.9, type: "block", who: "RW", to: [[14.0, 6.8]] },
         { t: 0.9, dur: 1.5, type: "move", who: "LB", to: [[6.2, 10.4], [8.4, 9.4]] },
       ],
@@ -130,7 +130,7 @@ window.TACTICS["07"] = {
         "RWは落ちてから時間があるためブロッキング注意。",
       ],
       actions: [
-        { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[7.0, 7.3]] },
+        { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[6.1, 6.1]] },
         { t: 0.0, dur: 0.1, type: "block", who: "RW", to: [[14.0, 6.8]] },
         { t: 0.0, dur: 1.6, type: "move", who: "LW", to: [[1.3, 12.8]] },
         { t: 0.4, dur: 0.8, type: "shoot", who: "LB" },
@@ -139,7 +139,7 @@ window.TACTICS["07"] = {
         { group: "3枚目が出てきた時", label: "空いたポストに落とす（PV）", from: 0.0,
           text: "両3枚目がLBに出てくるなら、空間を作れているポストへ落とす。ここではPVへ。（推定：パスコースを空ける守備の寄せ位置は指導者確認）",
           actions: [
-            { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[7.0, 7.3]] },
+            { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[6.1, 6.1]] },
             { t: 0.0, dur: 0.1, type: "block", who: "RW", to: [[14.0, 6.8]] },
             { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[8.1, 7.7]] },
             { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[11.2, 7.9]] },
@@ -158,7 +158,7 @@ window.TACTICS["07"] = {
         { group: "補足・展開パターン（裏）", label: "RWが下がってシュートフェイクからアウトカットイン", from: 0.0,
           text: "2本目は（裏）。RWはRBへパスした後いったん下がる。LBはロング狙いから右2枚目を中に寄せ、シュートフェイクからRWへ並行パス。RWがアウトカットイン。",
           actions: [
-            { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[7.0, 7.3]] },
+            { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[6.1, 6.1]] },
             { t: 0.0, dur: 0.9, type: "move", who: "RW", to: [[15.8, 8.8]] },
             { t: 0.6, dur: 0.7, type: "move", who: "R2", to: [[13.2, 6.6]] },
             { t: 0.9, dur: 0.6, type: "fake", from: "LB", to: "PV" },
