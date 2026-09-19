@@ -9,3 +9,10 @@ html,body{height:100%;overflow:hidden}body{height:100dvh;display:flex;flex-direc
 
 /* Keep restart within reach alongside playback, including narrow phones. */
 .transport button{padding-inline:6px;white-space:nowrap}.transport .primary{min-width:0}.transport #restartAlways{background:#e2edcc;border-color:#bbcda7}
+
+/* Two scenes lead to the mirrored RB's five central decisions. */
+.mirrored #choicePanel{max-height:calc(100% - var(--dock-height) - 16px)}
+.mirrored #choiceHint{margin:0 0 4px}
+.mirrored #steps{grid-template-columns:repeat(2,1fr)}
+.mirrored #branches button{font-size:12px;padding:6px 9px}
+@media(max-height:550px) and (orientation:landscape){.mirrored #branches{grid-template-columns:repeat(3,1fr)}}

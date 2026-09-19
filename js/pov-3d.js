@@ -1,6 +1,10 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609190657';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609191643';
+import {mirrorTactic} from './mirror-tactic.js?v=202609191643';
+const MIRRORED=new URLSearchParams(location.search).get('mirror')==='1';
 const E=window.TacticEngine,$=id=>document.getElementById(id),clamp=T.MathUtils.clamp;
-const STEP_NAMES=['逆パス','回り込み','RBへ','最後の判断'];
+const STEP_NAMES=MIRRORED?['回り込み','RBとPVの判断']:['逆パス','回り込み','RBへ','最後の判断'];
+const CHOICE_STEP=STEP_NAMES.length-1;
+const CHOICE_LABELS=MIRRORED?['① ロングシュート','② 左へ展開 → PV','③ 右へ展開 → PV','④ PV経由で左の3対2','⑤ 左でもらって縦の2対1']:['① アウト割り','② PVパス','③ サイド落とし'];
 
 // Retain the existing cue timeline and branch state calculation; render in WebGL.
 class CourtView extends window.PovView {
@@ -67,11 +71,7 @@ class CourtView extends window.PovView {
   }
   draw(st,t){
     if(!this.renderer)return;
-    const me=st.pos.RB,fw=this.forwardAt(t),angle=Math.atan2(fw.y,fw.x)+this.yawOffset;
-    const dx=Math.cos(angle),dz=Math.sin(angle),pitch=-.07+this.pitchOffset;
-    this.cam={x:me.x,y:me.y,fw:{x:dx,y:dz},rt:{x:-dz,y:dx}};
-    this.camera.position.set(me.x,1.6,me.y);
-    this.camera.lookAt(me.x+dx*Math.cos(pitch),1.6+Math.sin(pitch),me.y+dz*Math.cos(pitch));this.camera.updateMatrixWorld();
+    const me=st.pos.RB;
     const cue=this.cueAt(this.contexts().cur.cues,t),looks=new Set([].concat(cue?.look||[]));
     const actions=this.p.seq.actions;
     if(this.motionSequence!==this.p.seq){
@@ -116,15 +116,80 @@ class CourtView extends window.PovView {
     this.hands.position.set(0,-.32+catching*.045,-.65-catching*.06);
     this.hands.rotation.set(0,0,0);
     if(release){const wind=Math.sin(Math.min(release.u/.56,1)*Math.PI/2),follow=T.MathUtils.smoothstep(release.u,.56,1);this.hands.position.x=.07*wind;this.hands.position.y+=.08*wind-.12*follow;this.hands.position.z+=.08*wind-.22*follow;this.hands.rotation.x=-.16*wind+.25*follow;this.hands.rotation.z=-.1*wind;}
+    let handBlend=0;
     this.ball.visible=!ownBall&&(!!st.ballPos||!!st.holder);
     if(this.ball.visible){
       const q=st.ballPos||st.pos[st.holder];let x=q.x,z=q.y,height=st.ballPos?st.ballZ:1.15;
       if(!st.ballPos&&this.athletes[st.holder]){const rot=this.athletes[st.holder].root.rotation.y;x+=Math.sin(rot)*.32;z+=Math.cos(rot)*.32;}
+      // A pass reaches the hands in front of the eyes, not the camera's feet.
+      // Keep the tactical state unchanged; only connect the visible catch/release to the hands.
+      const handAction=actions.find(a=>t>=a.t&&t<a.t+a.dur&&((a.type==='pass'&&(a.to==='RB'||a.from==='RB'))||(a.type==='shoot'&&a.who==='RB')));
+      const distance=Math.hypot(x-me.x,z-me.y);
+      if(handAction&&distance<1){
+        handBlend=T.MathUtils.smoothstep(1-distance,0,1);
+        const target=handAction.type==='shoot'?E.GOAL:st.pos[handAction.from==='RB'?handAction.to:handAction.from];
+        const vx=distance>1e-6?x-me.x:target.x-me.x,vz=distance>1e-6?z-me.y:target.y-me.y;
+        const length=Math.hypot(vx,vz)||1;
+        x=me.x+vx/length;z=me.y+vz/length;
+      }
       this.ball.position.set(x,height,z);this.ball.rotation.set(t*2,t*3,0);
+    }
+    this.frameCamera(st,t);
+    if(handBlend>0){
+      this.hands.updateWorldMatrix(true,true);
+      const target=this.hands.userData.ball.getWorldPosition(new T.Vector3());
+      this.ball.position.lerp(target,handBlend);this.hands.visible=true;
     }
     this.updateLabels(st,looks);this.drawMini(st);this.drawCallout(cue);
     $('shot').hidden=!st.shotDone;$('viewStatus').textContent=Math.abs(this.yawOffset)+Math.abs(this.pitchOffset)>.02?'RB目線 · 見回し中':'RB目線 · 自動視線';
     this.renderer.render(this.scene,this.camera);this.sound?.update(st,t,this.p);
+  }
+  frameCamera(st,t){
+    const me=st.pos.RB,eye=new T.Vector3(me.x,1.6,me.y);
+    const fw=this.forwardAt(t),preferred=Math.atan2(fw.y,fw.x);
+    const baseHFov=T.MathUtils.degToRad(this.wide?115:96),margin=.82;
+    const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
+    const goalAngle=Math.atan2(E.GOAL.y-me.y,E.GOAL.x-me.x);
+    // Frame the full goal and the rendered ball, including its radius. Apply this
+    // AFTER cue smoothing: the inherited 2D view assumes a different field of view.
+    const points=[];
+    for(const x of [8.45,11.55])for(const y of [0,2.05])points.push(new T.Vector3(x,y,0));
+    if(this.ball.visible){
+      const center=this.ball.position;
+      points.push(center.clone());
+      for(const axis of ['x','y','z'])for(const sign of [-1,1]){
+        const p=center.clone();p[axis]+=.14*sign;points.push(p);
+      }
+    }
+    const bearingPoints=points.slice(0,4);if(this.ball.visible)bearingPoints.push(this.ball.position);
+    const bearings=bearingPoints.map(p=>wrap(Math.atan2(p.z-eye.z,p.x-eye.x)-goalAngle));
+    const lo=Math.min(...bearings),hi=Math.max(...bearings);
+    const safeHalf=Math.atan(Math.tan(baseHFov/2)*margin);
+    const middle=(lo+hi)/2,freedom=Math.max(0,safeHalf-(hi-lo)/2);
+    const yaw=goalAngle+clamp(wrap(preferred-goalAngle),middle-freedom,middle+freedom);
+    const elevations=points.map(p=>Math.atan2(p.y-eye.y,Math.hypot(p.x-eye.x,p.z-eye.z)));
+    const bottom=Math.min(...elevations),top=Math.max(...elevations);
+    const vHalf=Math.atan(Math.tan(baseHFov/2)/this.camera.aspect*margin);
+    const vMiddle=(bottom+top)/2,vFreedom=Math.max(0,vHalf-(top-bottom)/2);
+    const pitch=clamp(-.07,vMiddle-vFreedom,vMiddle+vFreedom);
+    const aim=(a,p)=>{
+      this.camera.position.copy(eye);
+      this.camera.lookAt(eye.x+Math.cos(a)*Math.cos(p),eye.y+Math.sin(p),eye.z+Math.sin(a)*Math.cos(p));
+      this.camera.updateMatrixWorld();
+    };
+    aim(yaw,pitch);
+    let tanHalf=Math.tan(baseHFov/2);
+    for(const point of points){
+      const local=point.clone().applyMatrix4(this.camera.matrixWorldInverse),depth=Math.max(.01,-local.z);
+      tanHalf=Math.max(tanHalf,Math.abs(local.x)/depth/margin,Math.abs(local.y)/depth*this.camera.aspect/margin);
+    }
+    this.hfov=2*Math.atan(tanHalf);
+    this.camera.fov=T.MathUtils.radToDeg(2*Math.atan(tanHalf/this.camera.aspect));
+    this.camera.updateProjectionMatrix();
+    // Manual looking remains available; reset restores automatic framing.
+    const angle=yaw+this.yawOffset;
+    aim(angle,pitch+this.pitchOffset);
+    this.cam={x:me.x,y:me.y,fw:{x:Math.cos(angle),y:Math.sin(angle)},rt:{x:-Math.sin(angle),y:Math.cos(angle)}};
   }
   updateLabels(st,looks){
     const edges={left:0,right:0},placed=[];
@@ -189,7 +254,7 @@ function showPanel(id){
 function pausePlayback(){player.auto=false;clearTimeout(player.autoTimer);player.pause();}
 function showChoices(){
   pausePlayback();changing=true;view.clearStop();
-  player.gotoStep(3,false);player.t=player.total;player.render();
+  player.gotoStep(CHOICE_STEP,false);player.t=player.total;player.render();
   terminalSeen=player.seq;changing=false;renderPanel();showPanel('choicePanel');
 }
 function startBranch(branch){
@@ -199,10 +264,10 @@ function startBranch(branch){
 function updateUI(){
   if(!player)return;
   const ended=player.t>=player.total;
-  $('play').textContent=view?.stopped?'続き ▶':ended&&player.stepIndex===3?(player.branch?'↻ もう一度':'プレーを選ぶ'):player.playing||player.auto?'Ⅱ 一時停止':'▶ 再生';
+  $('play').textContent=view?.stopped?'続き ▶':ended&&player.stepIndex===CHOICE_STEP?(player.branch?'↻ もう一度':'プレーを選ぶ'):player.playing||player.auto?'Ⅱ 一時停止':'▶ 再生';
   $('prev').disabled=player.stepIndex===0&&!player.branch;
-  $('next').textContent=view?.stopped?'続き':player.stepIndex===3?'選ぶ':'次へ';
-  $('sceneStep').textContent=`0${player.stepIndex+1} / 04`;
+  $('next').textContent=view?.stopped?'続き':player.stepIndex===CHOICE_STEP?'選ぶ':'次へ';
+  $('sceneStep').textContent=`0${player.stepIndex+1} / 0${STEP_NAMES.length}`;
   $('modeName').textContent=view?.learning===false?'体験':'学習';
   $('seek').value=player.total?Math.round(player.t/player.total*1000):0;
   $('time').textContent=`${player.t.toFixed(1)} / ${player.total.toFixed(1)}秒`;
@@ -210,7 +275,7 @@ function updateUI(){
   if(view&&!changing&&!view.stopped&&player.t>=player.total&&terminalSeen!==player.seq){
     terminalSeen=player.seq;
     if(player.branch){pausePlayback();$('resultText').textContent=player.branch.label;showPanel('resultPanel');}
-    else if(player.stepIndex===3){pausePlayback();showPanel('choicePanel');}
+    else if(player.stepIndex===CHOICE_STEP){pausePlayback();showPanel('choicePanel');}
   }
 }
 function renderPanel(){
@@ -218,8 +283,8 @@ function renderPanel(){
   $('stepTitle').textContent=player.branch?player.branch.label:STEP_NAMES[player.stepIndex]+' · '+player.step.title;
   // Rebuild only when the branch changes, never for every animation frame.
   const b=$('branches');b.replaceChildren();
-  for(const [i,branch] of player.data.steps[3].branches.entries()){
-    const button=document.createElement('button');button.textContent=['① アウト割り','② PVパス','③ サイド落とし'][i];
+  for(const [i,branch] of player.data.steps[CHOICE_STEP].branches.entries()){
+    const button=document.createElement('button');button.textContent=CHOICE_LABELS[i];
     button.classList.toggle('active',player.branch===branch);button.onclick=()=>startBranch(branch);b.append(button);
   }
   updateUI();
@@ -230,17 +295,27 @@ function changeStep(i,play=false){
   if(play){player.auto=true;player.play();updateUI();}
 }
 try{
-  const data=structuredClone(window.TACTICS['05']);data.steps.forEach((s,i)=>{if(i!==3)s.branches=[];});
+  const data=MIRRORED?mirrorTactic(window.TACTICS['05'],E.CW):structuredClone(window.TACTICS['05']);data.steps=data.steps.slice(0,STEP_NAMES.length);data.steps.forEach((s,i)=>{if(i!==CHOICE_STEP)s.branches=[];});
+  if(MIRRORED){
+    document.body.classList.add('mirrored');
+    $('choiceTitle').textContent='中央のRB：守備を見て選ぶ';
+    $('choiceHint').textContent='5つの守備の反応を体験。選択後はシュートまで再生。';
+    $('modeHelp').textContent='学習モードは見るポイントを表示し、判断時に一時停止します。体験モードは解説を減らして連続再生します。中央でRBの5択を選ぶと、パス先のプレーはシュートまで自動で進みます。';
+    document.title='ユーゴ・左右反転 RB目線 3D | ハンド動き解説';
+    document.querySelector('.lab').textContent='3D · 左右反転';
+    document.querySelector('.stage').setAttribute('aria-label','左右反転・RB目線の3D体育館');
+    for(const link of document.querySelectorAll('.help a')){const url=new URL(link.href);url.searchParams.set('mirror','1');link.href=url.href;}
+  }
   player=new E.Player(data,$('court'));player.pause();view=new CourtView(player);
   window.player=player;window.pov=view;window.court3d=view;
   player.onChange=renderPanel;
   const internal=$('court').querySelector('g#court');if(internal)internal.id='court-lines-3d';
-  for(let i=0;i<4;i++){const b=document.createElement('button');b.textContent=`${i+1} ${STEP_NAMES[i]}`;b.onclick=()=>changeStep(i);$('steps').append(b);}
+  for(let i=0;i<STEP_NAMES.length;i++){const b=document.createElement('button');b.textContent=`${i+1} ${STEP_NAMES[i]}`;b.onclick=()=>changeStep(i);$('steps').append(b);}
   $('play').onclick=()=>{
     hidePanels();
     if(view.stopped)view.resume();
     else if(player.playing||player.auto)pausePlayback();
-    else if(player.stepIndex===3&&!player.branch&&player.t>=player.total)showChoices();
+    else if(player.stepIndex===CHOICE_STEP&&!player.branch&&player.t>=player.total)showChoices();
     else{
       if(player.t>=player.total){changing=true;terminalSeen=null;player.restart(false);changing=false;}
       player.auto=!player.branch;player.play();
@@ -248,7 +323,7 @@ try{
     updateUI();
   };
   $('prev').onclick=()=>changeStep(player.branch?player.stepIndex:Math.max(0,player.stepIndex-1));
-  $('next').onclick=()=>{hidePanels();if(view.stopped)view.resume();else if(player.stepIndex===3)showChoices();else changeStep(player.stepIndex+1);};
+  $('next').onclick=()=>{hidePanels();if(view.stopped)view.resume();else if(player.stepIndex===CHOICE_STEP)showChoices();else changeStep(player.stepIndex+1);};
   $('choose').onclick=showChoices;
   const restart=()=>{view.yawOffset=0;view.pitchOffset=0;changeStep(0,true);};
   $('restartAlways').onclick=restart;$('restart').onclick=restart;$('startOver').onclick=restart;
@@ -270,6 +345,6 @@ try{
 }catch(error){
   player?.pause();console.error(error);$('loading').hidden=false;
   $('loading').replaceChildren(document.createTextNode('この環境では3Dを表示できません。'));
-  const link=document.createElement('a');link.href='pov.html?id=05&pos=RB';link.textContent='元のRB目線を開く';$('loading').append(link);
+  const link=document.createElement('a');link.href='pov.html?id=05&pos=RB'+(MIRRORED?'&mirror=1':'');link.textContent='元のRB目線を開く';$('loading').append(link);
   for(const el of document.querySelectorAll('button,input'))el.disabled=true;
 }
