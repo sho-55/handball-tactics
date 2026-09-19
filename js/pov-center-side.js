@@ -1,5 +1,5 @@
 // Set 07 presentation only. Preserve the source action timelines and coordinates.
-import {mirrorTactic} from './mirror-tactic.js?v=202609200658';
+import {mirrorTactic} from './mirror-tactic.js?v=202609200706';
 export function centerSidePov(source,mirror,E){
   const data=mirror?mirrorTactic(source,E.CW):structuredClone(source);
   const steps=data.steps;

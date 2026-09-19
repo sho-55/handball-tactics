@@ -1,7 +1,7 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609200658';
-import {makeScreenLesson} from './screen-lesson.js?v=202609200658';
-import {centerSidePov} from './pov-center-side.js?v=202609200658';
-import {mirrorTactic} from './mirror-tactic.js?v=202609200658';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609200706';
+import {makeScreenLesson} from './screen-lesson.js?v=202609200706';
+import {centerSidePov} from './pov-center-side.js?v=202609200706';
+import {mirrorTactic} from './mirror-tactic.js?v=202609200706';
 const PARAMS=new URLSearchParams(location.search),MIRRORED=PARAMS.get('mirror')==='1';
 const TACTIC_ID=['06','07'].includes(PARAMS.get('id'))?PARAMS.get('id'):'05',SIDE_YUGO=TACTIC_ID==='06',CENTER_SIDE=TACTIC_ID==='07';
 const TACTIC_NAME=CENTER_SIDE?'センターサイド':SIDE_YUGO?'サイドユーゴ':'ユーゴ';
@@ -355,6 +355,7 @@ function startBranch(branch,explain=false){
 }
 function updateUI(){
   if(!player)return;
+  $('explainPlay').hidden=!CENTER_SIDE||!player.branch?.basic;
   const ended=player.t>=player.total;
   $('play').textContent=view?.stopped?'続き ▶':ended&&player.stepIndex===CHOICE_STEP?(player.branch?'↻ もう一度':'プレーを選ぶ'):player.playing||player.auto?'Ⅱ 一時停止':'▶ 再生';
   $('prev').disabled=player.stepIndex===0&&!player.branch;
@@ -436,7 +437,6 @@ try{
   $('basicPlay').hidden=!CENTER_SIDE;
   const basicLesson=explain=>{changing=true;pausePlayback();view.clearStop();player.gotoStep(CHOICE_STEP,false);changing=false;const basic=player.step.branches.find(b=>b.basic);if(explain)view.setLearning(true);startBranch(MIRRORED?{...basic,playFrom:0,from:0}:basic,explain);};
   $('basicPlay').onclick=()=>basicLesson(false);
-  $('explainPlay').hidden=!CENTER_SIDE;
   $('explainPlay').onclick=()=>basicLesson(true);
   const restart=()=>{view.yawOffset=0;view.pitchOffset=0;changeStep(0,true);};
   $('restartAlways').onclick=restart;$('restart').onclick=restart;$('startOver').onclick=restart;
