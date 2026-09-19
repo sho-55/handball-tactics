@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ハンド動き解説</title>
-<link rel="stylesheet" href="css/style.css?v=202609191808">
+<link rel="stylesheet" href="css/style.css?v=202609191846">
 </head>
 <body>
 <header class="top"><h1>ハンド動き解説（きっかけシート）</h1></header>
 <div class="purpose">セットを選ぶと、駒が動いて流れを説明します。</div>
 <div class="list" id="list"></div>
-<script src="tactics/index.js?v=202609191808"></script>
+<script src="tactics/index.js?v=202609191846"></script>
 <script>
   const list = document.getElementById("list");
   window.TACTIC_LIST.forEach((t) => {
@@ -19,11 +19,11 @@
     list.appendChild(a);
     if (t.trial3d) {
       const trial = document.createElement("a"); trial.className = "card trial3d"; trial.href = t.trial3d;
-      trial.innerHTML = `<div class="no">セット ${t.id}　3Dテスト版</div><h2>ユーゴを3Dで体験する</h2><p>右45度（RB）の目線で体育館へ。立体選手の動きを見ながら、パスや攻め方を確認できます。</p><span class="trial-link">3Dテストを開く →</span>`;
+      trial.innerHTML = `<div class="no">セット ${t.id}　3Dテスト版</div><h2>${t.id === "06" ? "サイドユーゴ" : "ユーゴ"}を3Dで体験する</h2><p>右45度（RB）の目線で体育館へ。立体選手の動きを見ながら、パスや攻め方を確認できます。</p><span class="trial-link">3Dテストを開く →</span>`;
       list.appendChild(trial);
-      if (t.id === "05") {
-        const reverse = document.createElement("a"); reverse.className = "card trial3d"; reverse.href = t.trial3d + "?mirror=1";
-        reverse.innerHTML = `<div class="no">セット 05　3D・左右反転</div><h2>ユーゴ・左右逆をRB目線で体験する</h2><p>右45度（RB）からCBの後ろを回り込み、中央でパスを受けてPVと攻める動きを体験できます。</p><span class="trial-link">左右反転の3Dを開く →</span>`;
+      if (["05", "06"].includes(t.id)) {
+        const reverse = document.createElement("a"); reverse.className = "card trial3d"; reverse.href = t.trial3d + (t.trial3d.includes("?") ? "&" : "?") + "mirror=1";
+        reverse.innerHTML = `<div class="no">セット ${t.id}　3D・左右反転</div><h2>${t.id === "06" ? "サイドユーゴ" : "ユーゴ"}・左右逆をRB目線で体験する</h2><p>${t.id === "06" ? "RBからRWへ出して中央へ移動。ケンケンから守備を見て、ロング・PV・左への展開を選びます。" : "右45度（RB）からCBの後ろを回り込み、中央でパスを受けてPVと攻める動きを体験できます。"}</p><span class="trial-link">左右反転の3Dを開く →</span>`;
         list.appendChild(reverse);
       }
     }

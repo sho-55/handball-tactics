@@ -1,10 +1,12 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609191808';
-import {mirrorTactic} from './mirror-tactic.js?v=202609191808';
-const MIRRORED=new URLSearchParams(location.search).get('mirror')==='1';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609191846';
+import {mirrorTactic} from './mirror-tactic.js?v=202609191846';
+const PARAMS=new URLSearchParams(location.search),MIRRORED=PARAMS.get('mirror')==='1';
+const TACTIC_ID=PARAMS.get('id')==='06'?'06':'05',SIDE_YUGO=TACTIC_ID==='06';
+const TACTIC_NAME=SIDE_YUGO?'サイドユーゴ':'ユーゴ';
 const E=window.TacticEngine,$=id=>document.getElementById(id),clamp=T.MathUtils.clamp;
-const STEP_NAMES=MIRRORED?['回り込み','RBとPVの判断']:['逆パス','回り込み','RBへ','最後の判断'];
+const STEP_NAMES=SIDE_YUGO?(MIRRORED?['右から始動','CBから受球','RBの判断']:['左から始動','CBの1対1','RBへ展開','広い3対2']):MIRRORED?['回り込み','RBとPVの判断']:['逆パス','回り込み','RBへ','最後の判断'];
 const CHOICE_STEP=STEP_NAMES.length-1;
-const CHOICE_LABELS=MIRRORED?['① 3枚目が出なければ\n→ ロングシュート','② 左3枚目が出てきたら\n→ LBへパスし、PVへつなぐ','③ 右3枚目が出てきたら\n→ CBへパスし、PVへつなぐ','④ 左3枚目がけん制したら\n→ PVへパスし、左で3対2','⑤ 右3枚目がけん制したら\n→ 左でもらい、PVと縦の2対1']:['① アウト割り','② PVパス','③ サイド落とし'];
+const CHOICE_LABELS=SIDE_YUGO?(MIRRORED?['① 左3枚目が出なければ\n→ ケンケンからロング','② 左3枚目が出て裏が空いたら\n→ 再スライドしたPVへパス','③ 左2–3間を攻め、左2が寄れば\n→ 並行で走り込むLBへパス','④ フェイクで左2が外へ寄れば\n→ 左2–3間へ走るLBにパス']:['① 右1枚目と右2枚目の間が空けば\n→ アウト割りでシュート','② 右1枚目が自分に出てきたら\n→ 内側へ並行で走るRWにパス','③ 右2枚目が自分に寄ってきたら\n→ PVへポストパス']):MIRRORED?['① 3枚目が出なければ\n→ ロングシュート','② 左3枚目が出てきたら\n→ LBへパスし、PVへつなぐ','③ 右3枚目が出てきたら\n→ CBへパスし、PVへつなぐ','④ 左3枚目がけん制したら\n→ PVへパスし、左で3対2','⑤ 右3枚目がけん制したら\n→ 左でもらい、PVと縦の2対1']:['① アウト割り','② PVパス','③ サイド落とし'];
 
 // Retain the existing cue timeline and branch state calculation; render in WebGL.
 class CourtView extends window.PovView {
@@ -74,6 +76,7 @@ class CourtView extends window.PovView {
     const me=st.pos.RB;
     const cue=this.cueAt(this.contexts().cur.cues,t),looks=new Set([].concat(cue?.look||[]));
     const actions=this.p.seq.actions;
+    const fakeAction=actions.find(a=>a.type==='fake'&&t>=a.t&&t<a.t+a.dur);
     if(this.motionSequence!==this.p.seq){
       this.motionSequence=this.p.seq;this.motionTracks={};
       for(const action of actions){
@@ -99,13 +102,16 @@ class CourtView extends window.PovView {
           throwing=clamp((t-action.t+.35)/.85,0,1);shooting=action.type==='shoot';target=action.type==='pass'?st.pos[action.to]:E.GOAL;
         }
       }
+      if(fakeAction?.from===id){
+        throwing=.35*Math.sin((t-fakeAction.t)/fakeAction.dur*Math.PI);target=st.pos[fakeAction.to];
+      }
       model.root.position.set(q.x,0,q.y);model.root.rotation.y=Math.atan2(target.x-q.x,target.y-q.y);
       let distance=0,acceleration=0;for(const track of this.motionTracks[id]||[]){const u=clamp((t-track.t)/track.dur,0,1),e=u<.5?2*u*u:-1+(4-2*u)*u;distance+=track.length*e;if(u>0&&u<1)acceleration+=4*track.length/(track.dur*track.dur)*(1-2*T.MathUtils.smoothstep(u,.38,.62));}
       const yaw=model.root.rotation.y,lateral=model.def&&moving?clamp((mx*Math.cos(yaw)-mz*Math.sin(yaw))/(Math.hypot(mx,mz)||1),-1,1):0;
       poseAthlete(model,{speed,phase:distance*5.2+model.phaseOffset,holding:st.holder===id,throwing,receiving,acceleration,lateral,shooting});
       model.ring.visible=this.learning&&(looks.has(id)||st.holder===id);
     }
-    const ownBall=st.holder==='RB'&&!st.ballPos&&!st.shotDone;
+    const ownBall=st.holder==='RB'&&(!st.ballPos||fakeAction?.from==='RB')&&!st.shotDone;
     let release=null,catching=0;
     for(const action of actions){
       if(((action.type==='pass'&&action.from==='RB')||(action.type==='shoot'&&action.who==='RB'))&&t>=action.t-.28&&t<action.t+.22)release={u:clamp((t-action.t+.28)/.5,0,1)};
@@ -116,11 +122,16 @@ class CourtView extends window.PovView {
     this.hands.position.set(0,-.32+catching*.045,-.65-catching*.06);
     this.hands.rotation.set(0,0,0);
     if(release){const wind=Math.sin(Math.min(release.u/.56,1)*Math.PI/2),follow=T.MathUtils.smoothstep(release.u,.56,1);this.hands.position.x=.07*wind;this.hands.position.y+=.08*wind-.12*follow;this.hands.position.z+=.08*wind-.22*follow;this.hands.rotation.x=-.16*wind+.25*follow;this.hands.rotation.z=-.1*wind;}
+    if(fakeAction?.from==='RB'){
+      const lift=Math.sin((t-fakeAction.t)/fakeAction.dur*Math.PI);
+      this.hands.position.y+=.18*lift;this.hands.position.z-=.08*lift;this.hands.rotation.x=-.2*lift;
+    }
     let handBlend=0;
     this.ball.visible=!ownBall&&(!!st.ballPos||!!st.holder);
     if(this.ball.visible){
-      const q=st.ballPos||st.pos[st.holder];let x=q.x,z=q.y,height=st.ballPos?st.ballZ:1.15;
-      if(!st.ballPos&&this.athletes[st.holder]){const rot=this.athletes[st.holder].root.rotation.y;x+=Math.sin(rot)*.32;z+=Math.cos(rot)*.32;}
+      const inFlight=!!st.ballPos&&!fakeAction;
+      const q=inFlight?st.ballPos:st.pos[st.holder];let x=q.x,z=q.y,height=inFlight?st.ballZ:1.15;
+      if(!inFlight&&this.athletes[st.holder]){const rot=this.athletes[st.holder].root.rotation.y;x+=Math.sin(rot)*.32;z+=Math.cos(rot)*.32;}
       // A pass reaches the hands in front of the eyes, not the camera's feet.
       // Keep the tactical state unchanged; only connect the visible catch/release to the hands.
       const handAction=actions.find(a=>t>=a.t&&t<a.t+a.dur&&((a.type==='pass'&&(a.to==='RB'||a.from==='RB'))||(a.type==='shoot'&&a.who==='RB')));
@@ -295,16 +306,28 @@ function changeStep(i,play=false){
   if(play){player.auto=true;player.play();updateUI();}
 }
 try{
-  const data=MIRRORED?mirrorTactic(window.TACTICS['05'],E.CW):structuredClone(window.TACTICS['05']);data.steps=data.steps.slice(0,STEP_NAMES.length);data.steps.forEach((s,i)=>{if(i!==CHOICE_STEP)s.branches=[];});
-  if(MIRRORED){
-    document.body.classList.add('mirrored');
-    $('choiceTitle').textContent='中央のRB：守備を見て選ぶ';
+  const data=MIRRORED?mirrorTactic(window.TACTICS[TACTIC_ID],E.CW):structuredClone(window.TACTICS[TACTIC_ID]);data.steps=data.steps.slice(0,STEP_NAMES.length);data.steps.forEach((s,i)=>{if(i!==CHOICE_STEP)s.branches=[];});
+  if(SIDE_YUGO&&MIRRORED){
+    // Pause before the main line hands off to LB; the four alternatives replay
+    // the original decision from its own `from` point without changing its data.
+    data.steps[CHOICE_STEP].actions=data.steps[CHOICE_STEP].actions.filter(a=>a.t<1.9);
+    data.steps[CHOICE_STEP].pov.RB.cues=data.steps[CHOICE_STEP].pov.RB.cues.filter(c=>c.t<1.9);
+  }
+  document.body.classList.toggle('mirrored',MIRRORED);
+  document.body.classList.toggle('side-yugo',SIDE_YUGO);
+  document.body.classList.toggle('conditional-choices',MIRRORED||SIDE_YUGO);
+  $('steps').style.gridTemplateColumns=`repeat(${STEP_NAMES.length},1fr)`;
+  document.title=`${TACTIC_NAME}・${MIRRORED?'左右反転 ':''}RB目線 3D | ハンド動き解説`;
+  document.querySelector('.lab').textContent=`${SIDE_YUGO?'06 · ':''}3D${MIRRORED?' · 左右反転':''}`;
+  document.querySelector('.stage').setAttribute('aria-label',`${TACTIC_NAME}・${MIRRORED?'左右反転・':''}RB目線の3D体育館`);
+  if(MIRRORED||SIDE_YUGO){
+    $('choiceTitle').textContent=MIRRORED?'中央のRB：守備を見て選ぶ':'RBの3対2：守備を見て選ぶ';
     $('choiceHint').textContent='守備の動き → 選ぶプレー。選択後はシュートまで再生。';
-    $('modeHelp').textContent='学習モードは見るポイントを表示し、判断時に一時停止します。体験モードは解説を減らして連続再生します。中央でRBの5択を選ぶと、パス先のプレーはシュートまで自動で進みます。';
-    document.title='ユーゴ・左右反転 RB目線 3D | ハンド動き解説';
-    document.querySelector('.lab').textContent='3D · 左右反転';
-    document.querySelector('.stage').setAttribute('aria-label','左右反転・RB目線の3D体育館');
-    for(const link of document.querySelectorAll('.help a')){const url=new URL(link.href);url.searchParams.set('mirror','1');link.href=url.href;}
+    $('modeHelp').textContent=`学習モードは見るポイントを表示し、判断時に一時停止します。体験モードは解説を減らして連続再生します。RBの${CHOICE_LABELS.length}択を選ぶと、パス先のプレーはシュートまで自動で進みます。`;
+  }
+  for(const link of document.querySelectorAll('.help a')){
+    const url=new URL(link.href);url.searchParams.set('id',TACTIC_ID);
+    if(MIRRORED)url.searchParams.set('mirror','1');link.href=url.href;
   }
   player=new E.Player(data,$('court'));player.pause();view=new CourtView(player);
   window.player=player;window.pov=view;window.court3d=view;
@@ -345,6 +368,6 @@ try{
 }catch(error){
   player?.pause();console.error(error);$('loading').hidden=false;
   $('loading').replaceChildren(document.createTextNode('この環境では3Dを表示できません。'));
-  const link=document.createElement('a');link.href='pov.html?id=05&pos=RB'+(MIRRORED?'&mirror=1':'');link.textContent='元のRB目線を開く';$('loading').append(link);
+  const link=document.createElement('a');link.href='pov.html?id='+TACTIC_ID+'&pos=RB'+(MIRRORED?'&mirror=1':'');link.textContent='元のRB目線を開く';$('loading').append(link);
   for(const el of document.querySelectorAll('button,input'))el.disabled=true;
 }
