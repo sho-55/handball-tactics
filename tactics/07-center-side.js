@@ -67,9 +67,9 @@ window.TACTICS["07"] = {
       ],
       branches: [
         { group: "RWの選択肢", label: "右3枚目が釣れた → PV", from: 0.6,
-          text: "RWがボールを持った時に右3枚目が釣れて出てきたら、PVが右3枚目の裏へスライドしてポストパス。",
+          text: "RWがボールを持った時に右3枚目が釣れて出てきたら、PVが右3枚目の裏へスライドしてポストパス。（推定：パスコースを空ける守備の寄せ位置は指導者確認）",
           actions: [
-            { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[13.4, 7.8]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[13.3, 8.2]] },
             { t: 0.3, dur: 0.8, type: "move", who: "PV", to: [[12.2, 6.2]] },
             { t: 1.1, dur: 0.5, type: "pass", from: "RW", to: "PV" },
             { t: 1.7, dur: 0.6, type: "shoot", who: "PV" },
@@ -78,17 +78,17 @@ window.TACTICS["07"] = {
           text: "左右の3枚目が出てこなければ、RBがそのままロングシュート。",
           actions: [{ t: 0.0, dur: 0.6, type: "move", who: "RB", to: [[10.4, 8.4]] }, { t: 0.6, dur: 0.7, type: "shoot", who: "RB" }] },
         { group: "RBの選択肢", label: "②左3枚目出る＝LB or PV", from: 1.5,
-          text: "左3枚目が出てきたら、空いた裏へ入るPVか、左のLBへパス。",
+          text: "左3枚目が出てきたら、空いた裏へ入るPVか、左のLBへパス。（推定：パスコースを空ける守備の寄せ位置は指導者確認）",
           actions: [
-            { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[8.8, 7.8]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[8.4, 8.1]] },
             { t: 0.3, dur: 0.8, type: "move", who: "PV", to: [[8.4, 6.1]] },
             { t: 1.1, dur: 0.5, type: "pass", from: "RB", to: "PV" },
             { t: 1.7, dur: 0.6, type: "shoot", who: "PV" },
           ] },
         { group: "RBの選択肢", label: "③左2枚目けん制＝LBカラ走り", from: 1.5,
-          text: "左2枚目がけん制に出てきたら、LBは左1枚目と左2枚目の間へカラ走り。RBからLBへパスしてシュート。",
+          text: "左2枚目がけん制に出てきたら、LBは左1枚目と左2枚目の間へカラ走り。RBからLBへパスしてシュート。（推定：パスコースを空ける守備の寄せ位置は指導者確認）",
           actions: [
-            { t: 0.0, dur: 0.7, type: "move", who: "L2", to: [[6.0, 7.2]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "L2", to: [[5.7, 7.7]] },
             { t: 0.3, dur: 1.0, type: "move", who: "LB", to: [[3.8, 5.4]] },
             { t: 1.0, dur: 0.7, type: "pass", from: "RB", to: "LB" },
             { t: 1.8, dur: 0.6, type: "shoot", who: "LB" },
@@ -137,11 +137,11 @@ window.TACTICS["07"] = {
       ],
       branches: [
         { group: "3枚目が出てきた時", label: "空いたポストに落とす（PV）", from: 0.0,
-          text: "両3枚目がLBに出てくるなら、空間を作れているポストへ落とす。ここではPVへ。",
+          text: "両3枚目がLBに出てくるなら、空間を作れているポストへ落とす。ここではPVへ。（推定：パスコースを空ける守備の寄せ位置は指導者確認）",
           actions: [
             { t: 0.0, dur: 0.1, type: "block", who: "RB", to: [[7.0, 7.3]] },
             { t: 0.0, dur: 0.1, type: "block", who: "RW", to: [[14.0, 6.8]] },
-            { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[8.6, 7.9]] },
+            { t: 0.0, dur: 0.7, type: "move", who: "L3", to: [[8.1, 7.7]] },
             { t: 0.0, dur: 0.7, type: "move", who: "R3", to: [[11.2, 7.9]] },
             { t: 0.8, dur: 0.5, type: "pass", from: "LB", to: "PV" },
             { t: 1.4, dur: 0.6, type: "shoot", who: "PV" },

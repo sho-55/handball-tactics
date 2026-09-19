@@ -1,25 +1,45 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609192318';
-import {mirrorTactic} from './mirror-tactic.js?v=202609192318';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609200613';
+import {centerSidePov} from './pov-center-side.js?v=202609200613';
+import {mirrorTactic} from './mirror-tactic.js?v=202609200613';
 const PARAMS=new URLSearchParams(location.search),MIRRORED=PARAMS.get('mirror')==='1';
-const TACTIC_ID=PARAMS.get('id')==='06'?'06':'05',SIDE_YUGO=TACTIC_ID==='06';
-const TACTIC_NAME=SIDE_YUGO?'サイドユーゴ':'ユーゴ';
+const TACTIC_ID=['06','07'].includes(PARAMS.get('id'))?PARAMS.get('id'):'05',SIDE_YUGO=TACTIC_ID==='06',CENTER_SIDE=TACTIC_ID==='07';
+const TACTIC_NAME=CENTER_SIDE?'センターサイド':SIDE_YUGO?'サイドユーゴ':'ユーゴ';
 const E=window.TacticEngine,$=id=>document.getElementById(id),clamp=T.MathUtils.clamp;
-const STEP_NAMES=SIDE_YUGO?(MIRRORED?['右から始動','CBから受球','RBの判断']:['左から始動','CBの1対1','RBへ展開','広い3対2']):MIRRORED?['回り込み','RBとPVの判断']:['逆パス','回り込み','RBへ','最後の判断'];
+const CENTER=CENTER_SIDE?centerSidePov(window.TACTICS['07'],MIRRORED,E):null;
+const STEP_NAMES=CENTER?CENTER.stepNames:SIDE_YUGO?(MIRRORED?['右から始動','CBから受球','RBの判断']:['左から始動','CBの1対1','RBへ展開','広い3対2']):MIRRORED?['回り込み','RBとPVの判断']:['逆パス','回り込み','RBへ','最後の判断'];
 const CHOICE_STEP=STEP_NAMES.length-1;
-const CHOICE_LABELS=SIDE_YUGO?(MIRRORED?['① 左3枚目が出なければ\n→ ケンケンからロング','② 左3枚目が出て裏が空いたら\n→ 再スライドしたPVへパス','③ 左2–3間を攻め、左2が寄れば\n→ 並行で走り込むLBへパス','④ フェイクで左2が外へ寄れば\n→ 左2–3間へ走るLBにパス']:['① 右1枚目と右2枚目の間が空けば\n→ アウト割りでシュート','② 右1枚目が自分に出てきたら\n→ 内側へ並行で走るRWにパス','③ 右2枚目が自分に寄ってきたら\n→ PVへポストパス']):MIRRORED?['① 3枚目が出なければ\n→ ロングシュート','② 左3枚目が出てきたら\n→ LBへパスし、PVへつなぐ','③ 右3枚目が出てきたら\n→ CBへパスし、PVへつなぐ','④ 左3枚目がけん制したら\n→ PVへパスし、左で3対2','⑤ 右3枚目がけん制したら\n→ 左でもらい、PVと縦の2対1']:['① アウト割り','② PVパス','③ サイド落とし'];
+const CHOICE_LABELS=CENTER?CENTER.choiceLabels:SIDE_YUGO?(MIRRORED?['① 左3枚目が出なければ\n→ ケンケンからロング','② 左3枚目が出て裏が空いたら\n→ 再スライドしたPVへパス','③ 左2–3間を攻め、左2が寄れば\n→ 並行で走り込むLBへパス','④ フェイクで左2が外へ寄れば\n→ 左2–3間へ走るLBにパス']:['① 右1枚目と右2枚目の間が空けば\n→ アウト割りでシュート','② 右1枚目が自分に出てきたら\n→ 内側へ並行で走るRWにパス','③ 右2枚目が自分に寄ってきたら\n→ PVへポストパス']):MIRRORED?['① 3枚目が出なければ\n→ ロングシュート','② 左3枚目が出てきたら\n→ LBへパスし、PVへつなぐ','③ 右3枚目が出てきたら\n→ CBへパスし、PVへつなぐ','④ 左3枚目がけん制したら\n→ PVへパスし、左で3対2','⑤ 右3枚目がけん制したら\n→ 左でもらい、PVと縦の2対1']:['① アウト割り','② PVパス','③ サイド落とし'];
+
+// A continuation retains its original time origin: never restart an in-progress
+// movement at the receive position with a fresh easing curve.
+class TrainingPlayer extends E.Player {
+  currentSequence(){
+    if(this.branch?.playFrom!==undefined)return {start:this.stepStarts[this.stepIndex],actions:this.branch.actions};
+    return super.currentSequence();
+  }
+  restart(play=true){
+    if(!CENTER_SIDE)return super.restart(play);
+    this.playing=false;this.runId++;clearTimeout(this.autoTimer);
+    this.seq=this.currentSequence();
+    this.total=this.branch?E.duration(this.seq.actions):this.step.decisionAt??E.duration(this.seq.actions);
+    this.t=this.branch?.playFrom??0;
+    this.drawStatic();this.render();this.onChange();
+    if(play)this.play();
+  }
+}
 
 // Retain the existing cue timeline and branch state calculation; render in WebGL.
 class CourtView extends window.PovView {
   constructor(player){
     super(player,{pos:'RB',canvas:document.createElement('canvas'),minimap:$('court'),callout:$('callout'),stopBox:$('stopBox'),format:s=>s});
-    this.canvas=$('scene');this.learning=true;this.yawOffset=0;this.pitchOffset=0;this.wide=false;this.overview=SIDE_YUGO;
+    this.canvas=$('scene');this.learning=true;this.yawOffset=0;this.pitchOffset=0;this.wide=false;this.overview=CENTER?.view.overview??SIDE_YUGO;
     this.renderer=new T.WebGLRenderer({canvas:this.canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
     this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;
     this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.0;
     this.scene=new T.Scene();this.camera=new T.PerspectiveCamera(70,1,.06,90);this.scene.add(this.camera);
     buildGym(this.scene,this.renderer);this.athletes={};this.labels={};
     Object.entries(player.data.players).forEach(([id,p],i)=>{
-      if(id==='RB'&&!SIDE_YUGO)return;
+      if(id==='RB'&&!SIDE_YUGO&&!CENTER_SIDE)return;
       this.athletes[id]=makeAthlete(this.scene,id,p.team==='df',i);
       if(id==='RB')return;
       const label=document.createElement('span');label.className='player-label'+(p.team==='df'?' df':'');$('labels').append(label);this.labels[id]=label;
@@ -99,7 +119,14 @@ class CourtView extends window.PovView {
       if(moving&&!model.def){const blend=T.MathUtils.smoothstep(speed,.05,1.5),len=Math.hypot(mx,mz)||1,goalLen=Math.hypot(target.x-q.x,target.y-q.y)||1;target={x:q.x+(mx/len)*blend+(target.x-q.x)/goalLen*(1-blend),y:q.y+(mz/len)*blend+(target.y-q.y)/goalLen*(1-blend)};}
       let throwing=null,receiving=false,shooting=false;
       for(const action of actions){
-        if(action.type==='pass'&&action.to===id&&t>=action.t-.25&&t<=action.t+action.dur+.15){receiving=true;target=st.pos[action.from];}
+        if(action.type==='pass'&&action.to===id&&t>=action.t-.25&&t<=action.t+action.dur+.15){
+          receiving=true;target=st.pos[action.from];
+          if(CENTER_SIDE&&id==='RB'){
+            // Settle the catch toward the goal before the neutral decision.
+            const arrival=action.t+action.dur,u=T.MathUtils.smoothstep(t,arrival-.2,arrival+.1);
+            target={x:target.x+(E.GOAL.x-target.x)*u,y:target.y+(E.GOAL.y-target.y)*u};receiving=u<1-1e-8;
+          }
+        }
         if(((action.type==='pass'&&action.from===id)||(action.type==='shoot'&&action.who===id))&&t>=action.t-.35&&t<action.t+.5){
           throwing=clamp((t-action.t+.35)/.85,0,1);shooting=action.type==='shoot';target=action.type==='pass'?st.pos[action.to]:E.GOAL;
         }
@@ -170,7 +197,7 @@ class CourtView extends window.PovView {
   frameCamera(st,t){
     const me=st.pos.RB,eye=new T.Vector3(me.x,1.6,me.y);
     const goalDirection=new T.Vector3(me.x-E.GOAL.x,0,me.y-E.GOAL.y).normalize();
-    if(this.overview)eye.addScaledVector(goalDirection,3.6).setY(3.6);
+    if(this.overview)eye.addScaledVector(goalDirection,CENTER?.view.back??3.6).setY(CENTER?.view.height??3.6);
     const fw=this.forwardAt(t),preferred=this.overview?Math.atan2(E.GOAL.y-eye.z,E.GOAL.x-eye.x):Math.atan2(fw.y,fw.x);
     const baseHFov=T.MathUtils.degToRad(this.wide?115:this.overview?(this.camera.aspect<1?76:106):96),margin=.82;
     const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
@@ -300,9 +327,10 @@ function updateUI(){
   $('next').textContent=view?.stopped?'続き':player.stepIndex===CHOICE_STEP?'選ぶ':'次へ';
   $('sceneStep').textContent=`0${player.stepIndex+1} / 0${STEP_NAMES.length}`;
   $('modeName').textContent=view?.learning===false?'体験':'学習';
-  $('seek').value=player.total?Math.round(player.t/player.total*1000):0;
+  const playFrom=player.branch?.playFrom??0,elapsed=player.t-playFrom,duration=player.total-playFrom;
+  $('seek').value=duration?Math.round(elapsed/duration*1000):0;
   $('seek').disabled=player.total===0;
-  $('time').textContent=player.total===0?'受球直後 · 判断待ち':`${player.t.toFixed(1)} / ${player.total.toFixed(1)}秒`;
+  $('time').textContent=player.total===0?'受球直後 · 判断待ち':`${elapsed.toFixed(1)} / ${duration.toFixed(1)}秒`;
   document.querySelectorAll('#steps button').forEach((b,i)=>{b.classList.toggle('active',i===player.stepIndex);b.setAttribute('aria-current',i===player.stepIndex?'step':'false');});
   if(view&&!changing&&!view.stopped&&player.t>=player.total&&terminalSeen!==player.seq){
     terminalSeen=player.seq;
@@ -328,7 +356,7 @@ function changeStep(i,play=false){
   if(play){player.auto=true;player.play();updateUI();}
 }
 try{
-  const data=MIRRORED?mirrorTactic(window.TACTICS[TACTIC_ID],E.CW):structuredClone(window.TACTICS[TACTIC_ID]);data.steps=data.steps.slice(0,STEP_NAMES.length);data.steps.forEach((s,i)=>{if(i!==CHOICE_STEP)s.branches=[];});
+  const data=CENTER?CENTER.data:MIRRORED?mirrorTactic(window.TACTICS[TACTIC_ID],E.CW):structuredClone(window.TACTICS[TACTIC_ID]);data.steps=data.steps.slice(0,STEP_NAMES.length);data.steps.forEach((s,i)=>{if(i!==CHOICE_STEP)s.branches=[];});
   if(SIDE_YUGO&&MIRRORED){
     // Receive completes at 2.6s; the preceding step ends at 3.0s.
     // All alternatives start at this neutral state (from: 0), before L3 reacts.
@@ -337,13 +365,14 @@ try{
   }
   document.body.classList.toggle('mirrored',MIRRORED);
   document.body.classList.toggle('side-yugo',SIDE_YUGO);
-  document.body.classList.toggle('conditional-choices',MIRRORED||SIDE_YUGO);
+  document.body.classList.toggle('center-side',CENTER_SIDE);
+  document.body.classList.toggle('conditional-choices',MIRRORED||SIDE_YUGO||CENTER_SIDE);
   $('steps').style.gridTemplateColumns=`repeat(${STEP_NAMES.length},1fr)`;
   document.title=`${TACTIC_NAME}・${MIRRORED?'左右反転 ':''}RB目線 3D | ハンド動き解説`;
-  document.querySelector('.lab').textContent=`${SIDE_YUGO?'06 · ':''}3D${MIRRORED?' · 左右反転':''}`;
+  document.querySelector('.lab').textContent=`${TACTIC_ID!=='05'?TACTIC_ID+' · ':''}3D${MIRRORED?' · 左右反転':''}`;
   document.querySelector('.stage').setAttribute('aria-label',`${TACTIC_NAME}・${MIRRORED?'左右反転・':''}RB目線の3D体育館`);
-  if(MIRRORED||SIDE_YUGO){
-    $('choiceTitle').textContent=MIRRORED?'中央のRB：守備を見て選ぶ':'RBの3対2：守備を見て選ぶ';
+  if(MIRRORED||SIDE_YUGO||CENTER_SIDE){
+    $('choiceTitle').textContent=CENTER_SIDE?(MIRRORED?'RBのロング：守備を見て選ぶ':'中央のRB：守備を見て選ぶ'):MIRRORED?'中央のRB：守備を見て選ぶ':'RBの3対2：守備を見て選ぶ';
     $('choiceHint').textContent='守備の動き → 選ぶプレー。選択後はシュートまで再生。';
     $('modeHelp').textContent=`学習モードは見るポイントを表示し、判断時に一時停止します。体験モードは解説を減らして連続再生します。RBの${CHOICE_LABELS.length}択を選ぶと、パス先のプレーはシュートまで自動で進みます。`;
   }
@@ -351,7 +380,7 @@ try{
     const url=new URL(link.href);url.searchParams.set('id',TACTIC_ID);
     if(MIRRORED)url.searchParams.set('mirror','1');link.href=url.href;
   }
-  player=new E.Player(data,$('court'));player.pause();view=new CourtView(player);
+  player=new TrainingPlayer(data,$('court'));player.pause();view=new CourtView(player);
   window.player=player;window.pov=view;window.court3d=view;
   player.onChange=renderPanel;
   const internal=$('court').querySelector('g#court');if(internal)internal.id='court-lines-3d';
@@ -380,11 +409,11 @@ try{
   $('closeSettings').onclick=()=>{hidePanels();$('settingsBtn').focus({preventScroll:true});};
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){hidePanels();$('settingsBtn').focus({preventScroll:true});}});
   $('speed').onclick=()=>{const speeds=[.5,1,1.5];player.speed=speeds[(speeds.indexOf(player.speed)+1)%3];$('speed').textContent='速さ '+player.speed+'×';};
-  $('seek').addEventListener('input',()=>{hidePanels();pausePlayback();view.clearStop();player.t=player.total*Number($('seek').value)/1000;player.render();updateUI();});
+  $('seek').addEventListener('input',()=>{hidePanels();pausePlayback();view.clearStop();terminalSeen=null;const from=player.branch?.playFrom??0;player.t=from+(player.total-from)*Number($('seek').value)/1000;player.render();updateUI();});
   $('learn').onclick=()=>view.setLearning(true);$('experience').onclick=()=>view.setLearning(false);
   $('resetView').onclick=()=>{view.yawOffset=0;view.pitchOffset=0;view.redraw();};
   $('wide').onclick=()=>{view.wide=!view.wide;$('wide').setAttribute('aria-pressed',String(view.wide));$('wide').textContent=view.wide?'標準の視野':'広い視野';view.resize();view.redraw();};
-  $('overview').hidden=!SIDE_YUGO;
+  $('overview').hidden=!SIDE_YUGO&&!CENTER_SIDE;
   $('overview').onclick=()=>{view.overview=!view.overview;$('overview').setAttribute('aria-pressed',String(view.overview));$('overview').textContent=view.overview?'視点：引いて全体':'視点：本人目線';view.yawOffset=0;view.pitchOffset=0;view.redraw();};
   $('sound').onclick=async()=>{try{const enabled=await view.sound.toggle();$('sound').textContent=enabled?'音 ON':'音 OFF';$('sound').setAttribute('aria-pressed',String(enabled));}catch{$('sound').textContent='音を使えません';}};
   document.addEventListener('visibilitychange',()=>{if(document.hidden){pausePlayback();view.sound.previous=null;updateUI();}});
