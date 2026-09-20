@@ -20,3 +20,5 @@ html,body{height:100%;overflow:hidden}body{height:100dvh;display:flex;flex-direc
 @media(max-height:550px) and (orientation:landscape){.side-yugo.mirrored #branches,.center-side.mirrored #branches{grid-template-columns:repeat(2,1fr)}}
 
 #branches .basic-route{background:#e2efcc;border:2px solid #789b42;font-weight:800}.center-side #basicPlay{background:#e2efcc;border-color:#91ac69}
+
+#branches button.mainline-route{border-color:#688235;background:#edf4d8}

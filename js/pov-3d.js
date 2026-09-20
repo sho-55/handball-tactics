@@ -1,8 +1,8 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609201201';
-import {makeScreenLesson} from './screen-lesson.js?v=202609201201';
-import {ccDappoPov} from './pov-cc-dappo.js?v=202609201201';
-import {centerSidePov} from './pov-center-side.js?v=202609201201';
-import {mirrorTactic} from './mirror-tactic.js?v=202609201201';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609201326';
+import {makeScreenLesson} from './screen-lesson.js?v=202609201326';
+import {ccDappoPov} from './pov-cc-dappo.js?v=202609201326';
+import {centerSidePov} from './pov-center-side.js?v=202609201326';
+import {mirrorTactic} from './mirror-tactic.js?v=202609201326';
 const PARAMS=new URLSearchParams(location.search),MIRRORED=PARAMS.get('mirror')==='1';
 const TACTIC_ID=['06','07','08'].includes(PARAMS.get('id'))?PARAMS.get('id'):'05',SIDE_YUGO=TACTIC_ID==='06',CENTER_SIDE=TACTIC_ID==='07',CC_DAPPO=TACTIC_ID==='08';
 const TACTIC_NAME=CC_DAPPO?'CCダッポ':CENTER_SIDE?'センターサイド':SIDE_YUGO?'サイドユーゴ':'ユーゴ';
@@ -363,6 +363,8 @@ function startBranch(branch,explain=false){
   hidePanels();view.yawOffset=0;view.pitchOffset=0;terminalSeen=null;
   player.playBranch(branch);renderPanel();
 }
+const isMainline=branch=>!!(branch?.mainline||branch?.basic);
+const branchLabel=(branch,label=branch.label)=>(isMainline(branch)?'【本線】':'')+label;
 function updateUI(){
   if(!player)return;
   $('explainPlay').hidden=!CENTER_SIDE||!player.branch?.basic;
@@ -379,18 +381,19 @@ function updateUI(){
   document.querySelectorAll('#steps button').forEach((b,i)=>{b.classList.toggle('active',i===player.stepIndex);b.setAttribute('aria-current',i===player.stepIndex?'step':'false');});
   if(view&&!changing&&!view.stopped&&player.t>=player.total&&terminalSeen!==player.seq){
     terminalSeen=player.seq;
-    if(player.branch){pausePlayback();$('resultText').textContent=player.branch.label;showPanel('resultPanel');}
+    if(player.branch){pausePlayback();$('resultText').textContent=branchLabel(player.branch);showPanel('resultPanel');}
     else if(player.stepIndex===CHOICE_STEP){pausePlayback();showPanel('choicePanel');}
     else if(SIDE_YUGO&&MIRRORED&&player.stepIndex===CHOICE_STEP-1){showChoices();}
   }
 }
 function renderPanel(){
   if(!player)return;
-  $('stepTitle').textContent=player.branch?player.branch.label:STEP_NAMES[player.stepIndex]+' · '+player.step.title;
+  $('stepTitle').textContent=player.branch?branchLabel(player.branch):STEP_NAMES[player.stepIndex]+' · '+player.step.title;
   // Rebuild only when the branch changes, never for every animation frame.
   const b=$('branches');b.replaceChildren();
   for(const [i,branch] of [...player.data.steps[CHOICE_STEP].branches.entries()].sort((a,b)=>Number(!!b[1].basic)-Number(!!a[1].basic))){
-    const button=document.createElement('button');button.textContent=CHOICE_LABELS[i];
+    const button=document.createElement('button');button.textContent=branchLabel(branch,CHOICE_LABELS[i]);
+    button.classList.toggle('mainline-route',isMainline(branch));
     button.classList.toggle('basic-route',!!branch.basic);button.classList.toggle('active',player.branch===branch);button.onclick=()=>startBranch(branch);b.append(button);
   }
   updateUI();
@@ -418,7 +421,7 @@ try{
   document.querySelector('.stage').setAttribute('aria-label',`${TACTIC_NAME}・${MIRRORED?'左右反転・':''}RB目線の3D体育館`);
   if(MIRRORED||SIDE_YUGO||!!CENTER){
     $('choiceTitle').textContent=CC_DAPPO?(MIRRORED?'始動するRB：守備を見て選ぶ':'RBの縦の2対2：守備を見て選ぶ'):CENTER_SIDE?(MIRRORED?'RBのロング：守備を見て選ぶ':'中央のRB：守備を見て選ぶ'):MIRRORED?'中央のRB：守備を見て選ぶ':'RBの3対2：守備を見て選ぶ';
-    $('choiceHint').textContent='守備の動き → 選ぶプレー。選択後はシュートまで再生。';
+    $('choiceHint').textContent=data.steps[CHOICE_STEP].branches.some(isMainline)?'本線＝シートの流れ。守備に応じて他の選択肢も選びます。':'守備の動き → 選ぶプレー。選択後はシュートまで再生。';
     $('modeHelp').textContent=`学習モードは見るポイントを表示し、判断時に一時停止します。体験モードは解説を減らして連続再生します。RBの${CHOICE_LABELS.length}択を選ぶと、パス先のプレーはシュートまで自動で進みます。`;
   }
   for(const link of document.querySelectorAll('.help a')){
