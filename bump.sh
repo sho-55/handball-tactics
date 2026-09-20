@@ -1,7 +1,7 @@
 #!/bin/sh
 # 公開前に実行: 読み込みファイルのバージョン番号を更新してスマホのキャッシュを無効化する
 V=$(date +%Y%m%d%H%M)
-for f in tactic.html pov.html pov-3d.html index.html js/app.js js/pov-3d.js js/pov-center-side.js js/screen-lesson.js; do
+for f in tactic.html pov.html pov-3d.html index.html js/app.js js/pov-3d.js js/pov-center-side.js js/pov-cc-dappo.js js/screen-lesson.js; do
   perl -pi -e "s/\?v=\d+/?v=$V/g" "$f"
 done
 echo "version -> $V"
