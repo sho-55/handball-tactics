@@ -1,5 +1,5 @@
 // Set 08 keeps RB as the learner, including the mirrored initiating role.
-import {mirrorTactic} from './mirror-tactic.js?v=202609201158';
+import {mirrorTactic} from './mirror-tactic.js?v=202609201201';
 export function ccDappoPov(source,mirror,E){
   const data=mirror?mirrorTactic(source,E.CW):structuredClone(source),s=data.steps;
   const cue=(node,say,look)=>{node.pov={RB:{cues:[{t:0,face:'GOAL',look,say}]}};};

@@ -1,8 +1,8 @@
-import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609201158';
-import {makeScreenLesson} from './screen-lesson.js?v=202609201158';
-import {ccDappoPov} from './pov-cc-dappo.js?v=202609201158';
-import {centerSidePov} from './pov-center-side.js?v=202609201158';
-import {mirrorTactic} from './mirror-tactic.js?v=202609201158';
+import {T,buildGym,makeAthlete,poseAthlete,makeBall,makeHands} from './court-3d.js?v=202609201201';
+import {makeScreenLesson} from './screen-lesson.js?v=202609201201';
+import {ccDappoPov} from './pov-cc-dappo.js?v=202609201201';
+import {centerSidePov} from './pov-center-side.js?v=202609201201';
+import {mirrorTactic} from './mirror-tactic.js?v=202609201201';
 const PARAMS=new URLSearchParams(location.search),MIRRORED=PARAMS.get('mirror')==='1';
 const TACTIC_ID=['06','07','08'].includes(PARAMS.get('id'))?PARAMS.get('id'):'05',SIDE_YUGO=TACTIC_ID==='06',CENTER_SIDE=TACTIC_ID==='07',CC_DAPPO=TACTIC_ID==='08';
 const TACTIC_NAME=CC_DAPPO?'CCダッポ':CENTER_SIDE?'センターサイド':SIDE_YUGO?'サイドユーゴ':'ユーゴ';

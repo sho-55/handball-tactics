@@ -14,7 +14,9 @@ function verify(data,label){
     for(let k=1;k<20;k++){const st=E.stateAt(base,actions,a.t+a.dur*k/20);for(const id in st.pos)if(base.team[id]==='df'&&st.ballPos){const q=st.pos[id];assert(Math.hypot(st.ballPos.x-q.x,st.ballPos.y-q.y)>=E.laneLimit(a.kind),`${name}: pass near ${id}`);}}passes++;
    }
   }
-  for(let t=from;t<=E.duration(actions);t+=.025){const st=E.stateAt(base,actions,t),ids=Object.keys(st.pos);for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){const a=st.pos[ids[i]],b=st.pos[ids[j]],dist=Math.hypot(a.x-b.x,a.y-b.y);min=Math.min(min,dist);assert(dist>=1.1-1e-8,`${name}: ${ids[i]}/${ids[j]} ${dist.toFixed(3)}m at ${t.toFixed(2)}`);}}
+  for(let t=from;t<=E.duration(actions);t+=.025){const st=E.stateAt(base,actions,t),ids=Object.keys(st.pos);
+   for(const id of ids)if(base.team[id]==='of'){const q=st.pos[id],dx=Math.max(8.5-q.x,q.x-11.5,0),line=Math.sqrt(Math.max(0,36-dx*dx));assert(q.y>=line-1e-8,`${name}: ${id} inside 6m at ${t.toFixed(2)}`);}
+   for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){const a=st.pos[ids[i]],b=st.pos[ids[j]],dist=Math.hypot(a.x-b.x,a.y-b.y);min=Math.min(min,dist);assert(dist>=1.1-1e-8,`${name}: ${ids[i]}/${ids[j]} ${dist.toFixed(3)}m at ${t.toFixed(2)}`);}}
  };
  for(const[i,s]of data.steps.entries()){
   check(start,s.actions,`${label} S${i}`);
